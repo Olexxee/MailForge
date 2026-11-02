@@ -18,6 +18,28 @@ Build the platform skeleton before product features.
 
 **Exit criteria:** clean checkout installs and builds; CI lint/typecheck/tests pass; async rejection, 404, typed errors, safe production errors, and validation are tested; Prisma schema/migrations are reproducible; fake provider contract tests pass; no secrets are committed. No real provider credentials or real email sends are required.
 
+
+### Required backend module structure
+
+Every HTTP business feature uses a feature-based directory with exactly these responsibility layers and singular filename suffixes:
+
+```text
+modules/<feature>/
+├── <feature>.db.ts
+├── <feature>.service.ts
+├── <feature>.controller.ts
+├── <feature>.route.ts
+└── <feature>.validator.ts
+```
+
+- `db`: Prisma persistence and transaction boundaries only.
+- `service`: business rules and orchestration; no Express request/response objects.
+- `controller`: thin HTTP mapping; no direct database queries or business rules.
+- `route`: endpoint registration and middleware composition; use the singular `.route.ts` suffix.
+- `validator`: schemas and parsing for params, query, and body.
+
+Keep all five files together inside each feature directory. Do not create global `controllers/`, `services/`, or `repositories/` directories for feature code. Do not add empty layers to infrastructure-only modules that do not expose HTTP endpoints; document any justified exception.
+
 ## Phase 1 — Authentication and organisation access
 
 - Owner bootstrap without public registration.

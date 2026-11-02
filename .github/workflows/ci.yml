@@ -1,4 +1,8 @@
 name: CI
+
+concurrency:
+  group: phase-0-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 on:
   pull_request:
   push:

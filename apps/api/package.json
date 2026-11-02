@@ -1,1 +1,32 @@
-{"name":"@mailforge/api","version":"0.1.0","private":true,"type":"module","scripts":{"dev":"tsx watch src/server.ts","build":"tsc -p tsconfig.json","typecheck":"tsc --noEmit -p tsconfig.json","test":"vitest run"},"dependencies":{"@mailforge/shared":"0.1.0","cors":"^2.8.5","express":"^5.0.1","helmet":"^8.0.0","pino":"^9.5.0","pino-http":"^10.3.0","zod":"^3.24.1"},"devDependencies":{"@types/cors":"^2.8.17","@types/express":"^5.0.0","@types/node":"^22.10.2","tsx":"^4.19.2","vitest":"^2.1.8","supertest":"^7.0.0","@types/supertest":"^6.0.2"}}
+{
+  "name": "@mailforge/api",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@mailforge/shared": "0.1.0",
+    "cors": "^2.8.5",
+    "express": "^5.0.1",
+    "helmet": "^8.0.0",
+    "pino": "^9.5.0",
+    "pino-http": "^10.3.0",
+    "zod": "^3.24.1",
+    "dotenv": "^16.4.7",
+    "express-rate-limit": "^7.5.0"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.17",
+    "@types/express": "^5.0.0",
+    "@types/node": "^22.10.2",
+    "tsx": "^4.19.2",
+    "vitest": "^2.1.8",
+    "supertest": "^7.0.0",
+    "@types/supertest": "^6.0.2"
+  }
+}

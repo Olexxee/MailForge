@@ -103,6 +103,8 @@ Required shared API infrastructure:
 
 ### Backend module structure
 
+Every business module MUST contain these five files, using the singular `.route.ts` filename. This is the required structure for auth, users, organisations, domains, provider connections, mailboxes, folders, messages, attachments, and other feature modules. Do not group all database files or all controllers into global layer folders. Keep each feature's layers together.
+
 Each business module follows the same separation of concerns:
 
 ```text
@@ -112,7 +114,7 @@ modules/
     ├── mailboxes.service.ts      # Business rules and orchestration
     ├── mailboxes.controller.ts   # HTTP request/response mapping
     ├── mailboxes.validator.ts    # Request schemas
-    └── mailboxes.routes.ts       # Route definitions and middleware
+    └── mailboxes.route.ts       # Route definitions and middleware
 ```
 
 Responsibilities:
@@ -121,7 +123,9 @@ Responsibilities:
 - **Service:** business rules, permission-sensitive workflows, and provider orchestration. No Express request/response objects.
 - **Controller:** thin HTTP adapter. No business logic or direct Prisma/provider calls.
 - **Validator:** validates and transforms untrusted input at the boundary.
-- **Routes:** compose authentication, validation, permission middleware, `asyncWrapper`, and controllers.
+- **Route (`*.route.ts`):** compose authentication, validation, permission middleware, `asyncWrapper`, and controllers. Keep route declarations thin.
+
+The standard module filename pattern is `<feature>.db.ts`, `<feature>.service.ts`, `<feature>.controller.ts`, `<feature>.route.ts`, and `<feature>.validator.ts`. Do not rename `route` to `routes` or omit a layer without documenting and approving an explicit architectural exception. Infrastructure-only modules that do not expose HTTP endpoints must still keep their responsibilities separate; they must not invent empty controller/route files.
 
 ### Provider and data boundaries
 
@@ -154,6 +158,7 @@ Phases are sequential. Do not start a later phase until the current phase's exit
 
 1. Create npm-workspaces monorepo and workspace package boundaries.
 2. Configure TypeScript strictness, Node.js 22 ESM, path/build conventions, formatting, linting, and scripts.
+3. Enforce the feature-based backend module convention: each HTTP feature owns its `db`, `service`, `controller`, `route`, and `validator` files. Use the singular `.route.ts` suffix.
 3. Establish the React web app, Express API app, and separate worker entry point.
 4. Build API foundations before feature endpoints:
    - Express app/server separation and orderly startup/shutdown.

@@ -19,6 +19,8 @@
 - D-015: Establish `asyncWrapper`, typed application errors, not-found middleware, final central error middleware, shared response helpers, validation, redacted logging, and health/readiness checks in Phase 0. These are baseline architecture, not optional later improvements.
 - D-016: Phase sequence is 0 Foundation; 1 Authentication/organisation; 2 Domains/provider/mailboxes; 3 Inbox/reading; 4 Compose/send; 5 Productivity; 6 Additional providers; 7 Production hardening/release readiness.
 
+- D-017: Every HTTP business module uses a feature-based five-layer structure: `<feature>.db.ts`, `<feature>.service.ts`, `<feature>.controller.ts`, `<feature>.route.ts` (singular), and `<feature>.validator.ts`. Keep layers together per feature; controllers stay thin, services own business logic, DB files own persistence, routes compose middleware, and validators own request schemas. Infrastructure-only modules may omit HTTP layers when they do not expose routes.
+
 ## Open implementation details
 
 These details must be resolved during the relevant phase before implementation depends on them:

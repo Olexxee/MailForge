@@ -1,0 +1,1 @@
+let stopping=false;const shutdown=(signal:string)=>{if(stopping)return;stopping=true;process.stdout.write('MailForge worker stopping: '+signal+'\n')};process.on('SIGINT',()=>shutdown('SIGINT'));process.on('SIGTERM',()=>shutdown('SIGTERM'));process.stdout.write('MailForge worker started; no queues are registered yet\n');

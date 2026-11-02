@@ -2,7 +2,7 @@
 
 Private, multi-domain email management for an organisation.
 
-**Current status:** Blueprint approved. Phase 0 foundation is being defined; application code has not yet been implemented.
+**Current status:** Phase 0 implementation is in progress on PR #2. The initial monorepo, API foundation, Prisma schema, provider contracts, web shell, worker entry point, and CI workflow are in place. Phase 0 is not complete until CI passes and the remaining exit criteria are verified.
 
 MailForge connects existing email providers and gives authorised staff one unified webmail and administration interface. It is not an email host and will not operate its own mail server.
 

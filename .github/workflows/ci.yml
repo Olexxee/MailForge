@@ -6,6 +6,20 @@ on:
 jobs:
   verify:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: mailforge
+          POSTGRES_PASSWORD: mailforge
+          POSTGRES_DB: mailforge
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U mailforge -d mailforge"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     env:
       DATABASE_URL: postgresql://mailforge:mailforge@localhost:5432/mailforge?schema=public
     steps:
@@ -18,3 +32,4 @@ jobs:
       - run: npm run typecheck
       - run: npm run test
       - run: npm run build
+      - run: npm run db:migrate:deploy --workspace=@mailforge/database

@@ -67,7 +67,7 @@ export interface MailProvider {
     folderId: string,
     options: { limit: number; cursor?: string },
   ): Promise<ProviderMessagePage>;
-  getMessage(folderId: string, uid: number): Promise<ProviderMessageDetail | null>;
+  getMessage(folderId: string, messageId: string): Promise<ProviderMessageDetail | null>;
 }
 
 export class ProviderCapabilityError extends Error {

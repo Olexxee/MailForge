@@ -1,5 +1,22 @@
-import { describe, expect, it } from 'vitest';
-import { sanitizeMessageHtml } from './messages.service.js';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+const mocks = vi.hoisted(() => ({
+  assertMailboxPermission: vi.fn(),
+  findMailboxProviderForRead: vi.fn(),
+}));
+
+vi.mock('../mailboxes/mailboxes.service.js', () => ({
+  assertMailboxPermission: mocks.assertMailboxPermission,
+}));
+vi.mock('./messages.db.js', () => ({
+  findMailboxProviderForRead: mocks.findMailboxProviderForRead,
+}));
+
+import { getMailboxFolders, sanitizeMessageHtml } from './messages.service.js';
+
+beforeEach(() => {
+  vi.clearAllMocks();
+});
 
 describe('sanitizeMessageHtml', () => {
   it('keeps basic formatting while removing scripts, images, styles and event handlers', () => {
@@ -20,5 +37,25 @@ describe('sanitizeMessageHtml', () => {
     const html = sanitizeMessageHtml('<a href="javascript:alert(1)">open</a>');
     expect(html).toContain('open</a>');
     expect(html).not.toContain('javascript:');
+  });
+});
+
+describe('mailbox message authorisation', () => {
+  it('checks the explicit READ grant before loading provider credentials', async () => {
+    mocks.assertMailboxPermission.mockRejectedValue(new Error('MAILBOX_ACCESS_DENIED'));
+
+    await expect(getMailboxFolders({
+      organisationId: 'org_test',
+      mailboxId: 'mailbox_test',
+      actorId: 'user_test',
+    })).rejects.toThrow('MAILBOX_ACCESS_DENIED');
+
+    expect(mocks.assertMailboxPermission).toHaveBeenCalledWith(
+      'org_test',
+      'mailbox_test',
+      'user_test',
+      'READ',
+    );
+    expect(mocks.findMailboxProviderForRead).not.toHaveBeenCalled();
   });
 });

@@ -52,3 +52,16 @@ All state-changing authenticated endpoints require the CSRF cookie and matching 
 Mailbox permissions are hierarchical: READ (read only), SEND (read/send), MANAGE (read/send/organise), ADMINISTER (all mailbox permissions and access administration). Organisation roles never imply mailbox access. A user must have both an active organisation membership and an active mailbox grant.
 
 Domain/provider/mailbox configuration never modifies registrar DNS or the external provider account. Provider validation returns protocol status and safe error codes only; it never returns credentials or raw protocol diagnostics.
+
+
+## Phase 3 read-only inbox endpoints
+
+All endpoints below require an authenticated session and an active explicit mailbox grant with at least READ permission. Responses are `Cache-Control: no-store`. Provider credentials and raw protocol diagnostics are never returned.
+
+- `GET /api/v1/organisations/:organisationId/mailboxes/:mailboxId/folders`: lists at most 500 provider folders. Folder identifiers are opaque base64url tokens scoped to the mailbox route.
+- `GET /api/v1/organisations/:organisationId/mailboxes/:mailboxId/folders/:folderId/messages?limit=25&cursor=...`: returns at most 50 messages per page (default 25). The provider adapter scans a bounded UID window and uses a cursor bound to IMAP UIDVALIDITY; a UIDVALIDITY change invalidates the cursor and requires a folder refresh.
+- `GET /api/v1/organisations/:organisationId/mailboxes/:mailboxId/folders/:folderId/messages/:messageUid`: reads one message using its folder-scoped IMAP UID. Body parts are capped at 256 KiB each and attachments are metadata-only in this increment.
+
+Message bodies are not persisted in PostgreSQL. HTML is sanitised server-side using an explicit allow-list; active content, inline styles, forms, images, and scripts are not passed through. Message detail and folder/list responses are not cached by browsers or intermediaries.
+
+Current read scope is deliberately limited to folder listing, message pagination, and message detail. Attachment streaming, read/unread mutations, search, and mailbox sync remain subsequent increments and are not advertised as available capabilities yet.

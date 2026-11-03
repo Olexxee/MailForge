@@ -12,7 +12,7 @@ vi.mock('./messages.db.js', () => ({
   findMailboxProviderForRead: mocks.findMailboxProviderForRead,
 }));
 
-import { getMailboxFolders, sanitizeMessageHtml } from './messages.service.js';
+import { getMailboxFolders, sanitizeMessageHtml, updateMailboxMessageReadState } from './messages.service.js';
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -55,6 +55,29 @@ describe('mailbox message authorisation', () => {
       'mailbox_test',
       'user_test',
       'READ',
+    );
+    expect(mocks.findMailboxProviderForRead).not.toHaveBeenCalled();
+  });
+});
+
+describe('mailbox read-state authorisation', () => {
+  it('requires MANAGE permission before provider access', async () => {
+    mocks.assertMailboxPermission.mockRejectedValue(new Error('MAILBOX_MANAGE_REQUIRED'));
+
+    await expect(updateMailboxMessageReadState({
+      organisationId: 'org_test',
+      mailboxId: 'mailbox_test',
+      actorId: 'user_test',
+      folderId: 'aW5ib3g',
+      messageId: 'eyJ1aWRWYWxpZGl0eSI6IjEiLCJ1aWQiOjF9',
+      unread: false,
+    })).rejects.toThrow('MAILBOX_MANAGE_REQUIRED');
+
+    expect(mocks.assertMailboxPermission).toHaveBeenCalledWith(
+      'org_test',
+      'mailbox_test',
+      'user_test',
+      'MANAGE',
     );
     expect(mocks.findMailboxProviderForRead).not.toHaveBeenCalled();
   });

@@ -1,7 +1,6 @@
 import { AppError } from '../../lib/http.js';
 import { encryptCredential } from '../../lib/credential-encryption.js';
 import {
-  countActiveMailboxAdministrators,
   createMailboxConnectionTransaction,
   findActiveMembership,
   findMailboxByEmail,
@@ -127,21 +126,15 @@ export const revokeMailboxAccess = async (input: {
   await assertMailboxPermission(input.organisationId, input.mailboxId, input.actorId, 'ADMINISTER');
   const grant = await findMailboxGrant(input.organisationId, input.mailboxId, input.userId);
   if (!grant || grant.revokedAt) throw new AppError('MAILBOX_GRANT_NOT_FOUND', 404, 'Mailbox access grant was not found');
-  if (grant.permission === 'ADMINISTER') {
-    const remainingAdministrators = await countActiveMailboxAdministrators(
-      input.organisationId,
-      input.mailboxId,
-      input.userId,
-    );
-    if (remainingAdministrators === 0) {
-      throw new AppError('LAST_MAILBOX_ADMIN', 409, 'Grant ADMINISTER access to another active member before revoking the last administrator');
-    }
-  }
-  await revokeMailboxGrant({
+  const result = await revokeMailboxGrant({
     organisationId: input.organisationId,
     mailboxId: input.mailboxId,
     userId: input.userId,
     actorId: input.actorId,
   });
+  if (result === -1) {
+    throw new AppError('LAST_MAILBOX_ADMIN', 409, 'Grant ADMINISTER access to another active member before revoking the last administrator');
+  }
+  if (result !== 1) throw new AppError('MAILBOX_GRANT_NOT_FOUND', 404, 'Mailbox access grant was not found');
   return { revoked: true };
 };

@@ -156,30 +156,6 @@ export const revokeMailboxGrant = (input: {
   userId: string;
   actorId: string;
 }) => prisma.$transaction(async (tx) => {
-  const result = await tx.mailboxAccess.updateMany({
-    where: { organisationId: input.organisationId, mailboxId: input.mailboxId, userId: input.userId, revokedAt: null },
-    data: { revokedAt: new Date() },
-  });
-  if (result.count === 1) {
-    await tx.auditLog.create({
-      data: {
-        organisationId: input.organisationId,
-        actorId: input.actorId,
-        action: 'MAILBOX_ACCESS_REVOKED',
-        resourceType: 'MailboxAccess',
-        metadata: { mailboxId: input.mailboxId, targetUserId: input.userId },
-      },
-    });
-  }
-  return result.count;
-});
-
-export const revokeMailboxGrant = (input: {
-  organisationId: string;
-  mailboxId: string;
-  userId: string;
-  actorId: string;
-}) => prisma.$transaction(async (tx) => {
   const grant = await tx.mailboxAccess.findUnique({
     where: { mailboxId_userId: { mailboxId: input.mailboxId, userId: input.userId } },
   });

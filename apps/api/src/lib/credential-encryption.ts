@@ -40,12 +40,13 @@ export interface EncryptedCredential {
   keyVersion: number;
 }
 
-export const encryptCredential = (plaintext: string): EncryptedCredential => {
+export const encryptCredential = (plaintext: string, context: string): EncryptedCredential => {
   const keyring = readKeyring();
   const key = keyring.keys.get(keyring.activeVersion);
   if (!key) throw new Error('CREDENTIAL_ENCRYPTION_CONFIGURATION_INVALID');
   const iv = randomBytes(IV_LENGTH);
   const cipher = createCipheriv(ALGORITHM, key, iv);
+  cipher.setAAD(Buffer.from(context, 'utf8'));
   const encrypted = Buffer.concat([cipher.update(plaintext, 'utf8'), cipher.final()]);
   const tag = cipher.getAuthTag();
   return {
@@ -54,7 +55,7 @@ export const encryptCredential = (plaintext: string): EncryptedCredential => {
   };
 };
 
-export const decryptCredential = (ciphertext: string, keyVersion: number): string => {
+export const decryptCredential = (ciphertext: string, keyVersion: number, context: string): string => {
   try {
     const key = readKeyring().keys.get(keyVersion);
     if (!key) throw new Error('missing key version');
@@ -69,6 +70,7 @@ export const decryptCredential = (ciphertext: string, keyVersion: number): strin
       throw new Error('invalid encrypted payload');
     }
     const decipher = createDecipheriv(ALGORITHM, key, iv);
+    decipher.setAAD(Buffer.from(context, 'utf8'));
     decipher.setAuthTag(tag);
     return Buffer.concat([decipher.update(data), decipher.final()]).toString('utf8');
   } catch {

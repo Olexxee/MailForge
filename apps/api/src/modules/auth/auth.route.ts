@@ -10,6 +10,7 @@ authRouter.use((_req, res, next) => {
   next();
 });
 authRouter.post('/login', requireTrustedOrigin, createRateLimiter(5), validateBody(loginSchema), asyncWrapper(login));
-authRouter.get('/csrf', requireAuth, asyncWrapper(renewCsrf));\nauthRouter.get('/me', requireAuth, asyncWrapper(me));
+authRouter.get('/csrf', requireAuth, asyncWrapper(renewCsrf));
+authRouter.get('/me', requireAuth, asyncWrapper(me));
 authRouter.post('/logout', requireAuth, requireCsrf, asyncWrapper(logout));
 authRouter.post('/refresh', requireAuth, requireCsrf, asyncWrapper(refresh));

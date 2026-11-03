@@ -1,5 +1,6 @@
 import type { RequestHandler } from 'express';
-import { z, ZodError } from 'zod';
+import { rateLimit } from 'express-rate-limit';
+import { z } from 'zod';
 
 export class AppError extends Error {
   constructor(
@@ -18,14 +19,7 @@ export const asyncWrapper = (handler: RequestHandler): RequestHandler => (req, r
 };
 
 export const createRateLimiter = (limit: number): RequestHandler =>
-  (awaitRateLimit(limit));
-
-function awaitRateLimit(limit: number): RequestHandler {
-  // Kept in this shared module so feature routers never import the app entry point.
-  return rateLimitFactory(limit);
-}
-
-import { rateLimit as rateLimitFactory } from 'express-rate-limit';
+  rateLimit({ windowMs: 15 * 60 * 1000, limit, standardHeaders: 'draft-8', legacyHeaders: false });
 
 export const validateBody = (schema: z.ZodType): RequestHandler => (req, _res, next) => {
   const parsed = schema.safeParse(req.body);
@@ -36,5 +30,3 @@ export const validateBody = (schema: z.ZodType): RequestHandler => (req, _res, n
   req.body = parsed.data;
   next();
 };
-
-export const isValidationError = (error: unknown): error is ZodError => error instanceof ZodError;

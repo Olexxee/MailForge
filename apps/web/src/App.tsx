@@ -10,7 +10,7 @@ import {
   type User,
 } from './lib/api.js';
 
-type Page = 'members' | 'invitations';
+type Page = 'members' | 'invitations' | 'domains' | 'mailboxes';
 type InviteResult = { invitationToken: string; invitation: { id: string; email: string; role: string; expiresAt: string } };
 
 const readInviteToken = () => {
@@ -333,6 +333,8 @@ export default function App() {
           {canManage && <button className={page === 'invitations' ? 'nav-item active' : 'nav-item'} onClick={() => setPage('invitations')}>
             <span className="nav-icon">＋</span> Invitations <span className="nav-count">{invitations.length}</span>
           </button>}
+          <button className={page === 'domains' ? 'nav-item active' : 'nav-item'} onClick={() => setPage('domains')}><span className="nav-icon">◇</span> Domains</button>
+          <button className={page === 'mailboxes' ? 'nav-item active' : 'nav-item'} onClick={() => setPage('mailboxes')}><span className="nav-icon">✉</span> Mailboxes</button>
         </nav>
         <div className="sidebar-bottom">
           <div className="user-chip">
@@ -345,7 +347,7 @@ export default function App() {
 
       <main className="main-panel">
         <header className="topbar">
-          <div><span className="breadcrumb">Workspace</span><span className="breadcrumb-separator">/</span><strong>{page === 'members' ? 'Members' : 'Invitations'}</strong></div>
+          <div><span className="breadcrumb">Workspace</span><span className="breadcrumb-separator">/</span><strong>{page === 'members' ? 'Members' : page === 'invitations' ? 'Invitations' : page === 'domains' ? 'Domains' : 'Mailboxes'}</strong></div>
           <div className="topbar-right"><span className="secure-indicator"><i /> Secure session</span><span className="role-pill">{currentOrganisation?.role ?? 'MEMBER'}</span><button className="signout-top" onClick={() => void handleLogout()} disabled={busy}>Sign out</button></div>
         </header>
 
@@ -353,6 +355,10 @@ export default function App() {
           {error && <div className="alert-error" role="alert"><span>{error}</span><button onClick={() => setError('')} aria-label="Dismiss error">×</button></div>}
           {!currentOrganisation ? (
             <section className="empty-state"><div className="empty-icon">⌂</div><h2>No organisation access</h2><p>Your account is not an active member of an organisation. Ask an owner to invite you.</p></section>
+          ) : page === 'domains' ? (
+            <Phase2Workspace organisationId={organisationId} canManage={Boolean(canManage)} section="domains" />
+          ) : page === 'mailboxes' ? (
+            <Phase2Workspace organisationId={organisationId} canManage={Boolean(canManage)} section="mailboxes" />
           ) : page === 'members' ? (
             <>
               <div className="page-heading">

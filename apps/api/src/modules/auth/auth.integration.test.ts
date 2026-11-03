@@ -122,7 +122,7 @@ describe('Phase 1 authentication and organisation workflows', () => {
     expect(membership?.role).toBe('ADMIN');
   });
 
-  it('rejects revoked invitations', async () => {
+  it('rejects expired invitations', async () => {\n    const token = `expired-${suffix}-invitation-token-1234567890`;\n    await prisma.organizationInvitation.create({\n      data: {\n        organisationId,\n        email: `expired-${suffix}@mailforge.test`,\n        role: 'STAFF',\n        tokenHash: hashToken(token),\n        inviterId: ownerId,\n        expiresAt: new Date(Date.now() - 60_000),\n      },\n    });\n    await expect(acceptInvitation({\n      token, displayName: 'Expired User', password: 'a-secure-password-123',\n    })).rejects.toMatchObject({ code: 'INVITATION_INVALID' });\n  });\n\n  it('rejects revoked invitations', async () => {
     const invitation = await inviteMember({
       organisationId, actorId: ownerId, email: `revoked-${suffix}@mailforge.test`, role: 'STAFF',
     });

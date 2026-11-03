@@ -51,7 +51,7 @@ Date | Decision ID | Approved change | Rationale | Documents/implementation affe
 ## 2026-11-03 — Phase 2 domain and mailbox security
 
 - Domain ownership is verified through a MailForge-specific DNS TXT challenge. MailForge does not edit DNS. Challenges are rotated if lost and are bound to the exact current token to prevent a stale challenge from winning a race.
-- Provider credentials use AES-256-GCM with a key-versioned JSON keyring supplied through deployment secrets. Previous key versions must remain available until credentials are re-encrypted.
+- Provider credentials use AES-256-GCM with associated data binding ciphertext to organisation/mailbox identity and a key-versioned JSON keyring supplied through deployment secrets. Previous key versions must remain available until credentials are re-encrypted.
 - GO54 server hostnames are configured only by the API operator. The browser cannot submit hostnames, preventing arbitrary-host connection/SSRF through mailbox setup.
 - GO54 IMAP and SMTP are validated independently with strict TLS; SMTP validation never sends a message. The official GO54 guide describes generic mail.yoursite.com endpoints, but exact Cloud Mail account endpoints must be confirmed before use.
 - Mailbox permissions are hierarchical READ, SEND, MANAGE, ADMINISTER and are independent from organisation roles. An active organisation membership is also required for every mailbox permission.

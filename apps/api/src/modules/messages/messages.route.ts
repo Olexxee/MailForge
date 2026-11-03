@@ -27,7 +27,7 @@ messagesRouter.get(
   asyncWrapper(listMessages),
 );
 messagesRouter.get(
-  '/organisations/:organisationId/mailboxes/:mailboxId/folders/:folderId/messages/:messageUid',
+  '/organisations/:organisationId/mailboxes/:mailboxId/folders/:folderId/messages/:messageId',
   validateParams(messageDetailParamsSchema),
   asyncWrapper(getMessage),
 );

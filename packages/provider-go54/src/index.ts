@@ -281,15 +281,15 @@ const readBodyPart = async (
 const toSummary = (
   message: {
     uid: number;
-    envelope: {
+    envelope?: {
       subject?: string | null | undefined;
       from?: ImapAddress[] | undefined;
       to?: ImapAddress[] | undefined;
       date?: Date | string | undefined;
     } | undefined;
-    flags: Set<string> | undefined;
-    internalDate: Date | string | undefined;
-    size: number | undefined;
+    flags?: Set<string> | undefined;
+    internalDate?: Date | string | undefined;
+    size?: number | undefined;
   },
   folderId: string,
   uidValidity: string,

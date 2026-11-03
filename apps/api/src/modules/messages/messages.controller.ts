@@ -66,7 +66,7 @@ export const setMessageReadState = async (req: Request, res: Response) => {
 const safeFilename = (value: string): string => {
   const filename = Array.from(value, (character) => {
     const code = character.charCodeAt(0);
-    return code < 32 || code === 127 || character === '/' || character === '\\\\' ? '_' : character;
+    return code < 32 || code === 127 || code === 47 || code === 92 ? '_' : character;
   }).join('').slice(0, 180).trim();
   return filename || 'attachment';
 };

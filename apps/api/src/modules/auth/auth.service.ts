@@ -1,4 +1,4 @@
-import { AppError } from '../../app.js';
+import { AppError } from '../../lib/http.js';
 import { createOpaqueToken, hashToken, verifyPassword } from '../../lib/crypto.js';
 import { createSession, findActiveSession, findUserByEmail, findUserById, revokeSession, rotateSession } from './auth.db.js';
 

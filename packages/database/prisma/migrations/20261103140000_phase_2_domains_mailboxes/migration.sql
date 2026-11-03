@@ -91,7 +91,7 @@ ALTER TABLE "MailboxAccess" ADD CONSTRAINT "MailboxAccess_organisationId_fkey"
 FOREIGN KEY ("organisationId") REFERENCES "Organisation"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 ALTER TABLE "MailboxAccess" ADD CONSTRAINT "MailboxAccess_mailboxId_organisationId_fkey"
 FOREIGN KEY ("mailboxId", "organisationId") REFERENCES "Mailbox"("id", "organisationId") ON DELETE CASCADE ON UPDATE CASCADE;
-ALTER TABLE "MailboxAccess" ADD CONSTRAINT "MailboxAccess_userId_fkey"
-FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-ALTER TABLE "MailboxAccess" ADD CONSTRAINT "MailboxAccess_grantedById_fkey"
-FOREIGN KEY ("grantedById") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "MailboxAccess" ADD CONSTRAINT "MailboxAccess_organisationId_userId_fkey"
+FOREIGN KEY ("organisationId", "userId") REFERENCES "OrganizationMembership"("organisationId", "userId") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "MailboxAccess" ADD CONSTRAINT "MailboxAccess_organisationId_grantedById_fkey"
+FOREIGN KEY ("organisationId", "grantedById") REFERENCES "OrganizationMembership"("organisationId", "userId") ON DELETE CASCADE ON UPDATE CASCADE;

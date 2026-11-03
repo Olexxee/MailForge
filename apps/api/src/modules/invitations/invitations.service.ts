@@ -28,16 +28,7 @@ export const inviteMember = async (input: {
     inviterId: input.actorId,
     expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
   });
-  await prisma.auditLog.create({
-    data: {
-      organisationId: input.organisationId,
-      actorId: input.actorId,
-      action: 'INVITATION_CREATED',
-      resourceType: 'OrganizationInvitation',
-      resourceId: invitation.id,
-      metadata: { email: input.email, role: input.role },
-    },
-  });
+  // Return the raw token once; only its SHA-256 digest is persisted.
   return { id: invitation.id, email: invitation.email, role: invitation.role, expiresAt: invitation.expiresAt, token };
 };
 
@@ -98,15 +89,6 @@ export const revokeOrganisationInvitation = async (input: {
   organisationId: string; invitationId: string; actorId: string;
 }) => {
   await assertOrganisationRole(input.organisationId, input.actorId, ['OWNER', 'ADMIN']);
-  const result = await revokeInvitation(input.organisationId, input.invitationId);
+  const result = await revokeInvitation(input);
   if (result.count !== 1) throw new AppError('INVITATION_NOT_FOUND', 404, 'Pending invitation was not found');
-  await prisma.auditLog.create({
-    data: {
-      organisationId: input.organisationId,
-      actorId: input.actorId,
-      action: 'INVITATION_REVOKED',
-      resourceType: 'OrganizationInvitation',
-      resourceId: input.invitationId,
-    },
-  });
 };

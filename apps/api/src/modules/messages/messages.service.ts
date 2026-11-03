@@ -21,7 +21,7 @@ const safeHtmlOptions: sanitizeHtml.IOptions = {
   disallowedTagsMode: 'discard',
 };
 
-const providerError = (error: unknown): never => {
+export const sanitizeMessageHtml = (html: string): string => sanitizeHtml(html, safeHtmlOptions);\n\nconst providerError = (error: unknown): never => {
   const code = error && typeof error === 'object' && 'code' in error
     ? String((error as { code: unknown }).code)
     : '';
@@ -135,7 +135,7 @@ export const getMailboxMessage = async (input: {
     if (!message) throw new AppError('MESSAGE_NOT_FOUND', 404, 'Message was not found in this folder');
     return {
       ...message,
-      html: message.html === null ? null : sanitizeHtml(message.html, safeHtmlOptions),
+      html: message.html === null ? null : sanitizeMessageHtml(message.html),
     };
   } catch (error) {
     if (error instanceof AppError) throw error;

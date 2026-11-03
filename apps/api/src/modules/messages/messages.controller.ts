@@ -18,7 +18,7 @@ export const listFolders = async (req: Request, res: Response) => {
 
 export const listMessages = async (req: Request, res: Response) => {
   const auth = res.locals.auth as { userId: string };
-  const query = req.query as { limit: number; cursor?: string };
+  const query = res.locals.validatedQuery as { limit: number; cursor?: string };
   const result = await getMailboxMessages({
     organisationId: req.params.organisationId as string,
     mailboxId: req.params.mailboxId as string,

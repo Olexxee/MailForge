@@ -33,6 +33,7 @@ export function InboxWorkspace({ organisationId }: { organisationId: string }) {
   const [mailboxes, setMailboxes] = useState<Mailbox[]>([]);
   const [mailboxId, setMailboxId] = useState('');
   const [folders, setFolders] = useState<Folder[]>([]);
+  const [foldersMailboxId, setFoldersMailboxId] = useState('');
   const [folderId, setFolderId] = useState('');
   const [messages, setMessages] = useState<MessageSummary[]>([]);
   const [nextCursor, setNextCursor] = useState<string | null>(null);
@@ -64,17 +65,21 @@ export function InboxWorkspace({ organisationId }: { organisationId: string }) {
     setMessages([]);
     setNextCursor(null);
     setFolderId('');
+    setFolders([]);
+    setFoldersMailboxId('');
     try {
       const result = await apiRequest<{ folders: Folder[] }>(
         `/organisations/${organisationId}/mailboxes/${id}/folders`,
       );
       setFolders(result.folders);
+      setFoldersMailboxId(id);
       const inbox = result.folders.find((folder) =>
         folder.specialUse?.toLowerCase() === '\\inbox' || folder.name.toLowerCase() === 'inbox',
       );
       setFolderId(inbox?.id ?? result.folders[0]?.id ?? '');
     } catch (cause) {
       setFolders([]);
+      setFoldersMailboxId('');
       setError(cause instanceof Error ? cause.message : 'Could not load mailbox folders.');
     } finally {
       setLoading(false);
@@ -83,7 +88,7 @@ export function InboxWorkspace({ organisationId }: { organisationId: string }) {
 
   useEffect(() => {
     if (mailboxId) void loadFolders(mailboxId);
-    else setFolders([]);
+    else { setFolders([]); setFoldersMailboxId(''); }
   }, [mailboxId, loadFolders]);
 
   const loadMessages = useCallback(async (reset: boolean) => {
@@ -108,8 +113,8 @@ export function InboxWorkspace({ organisationId }: { organisationId: string }) {
   }, [organisationId, mailboxId, folderId, loading, nextCursor]);
 
   useEffect(() => {
-    if (mailboxId && folderId) void loadMessages(true);
-  }, [mailboxId, folderId]); // Loading is intentionally triggered only when the selected mailbox/folder changes.
+    if (mailboxId && folderId && foldersMailboxId === mailboxId) void loadMessages(true);
+  }, [mailboxId, folderId, foldersMailboxId]); // Loading is intentionally triggered only when the selected mailbox/folder changes.
 
   const openMessage = async (message: MessageSummary) => {
     if (!mailboxId || !folderId) return;
@@ -146,7 +151,7 @@ export function InboxWorkspace({ organisationId }: { organisationId: string }) {
             <nav className="inbox-folders" aria-label="Mailbox folders">
               <p className="eyebrow">FOLDERS</p>
               {folders.map((folder) => (
-                <button key={folder.id} className={folder.id === folderId ? 'nav-item active' : 'nav-item'} style={{ width: '100%', textAlign: 'left' }} onClick={() => setFolderId(folder.id)}>
+                <button key={folder.id} className={folder.id === folderId ? 'nav-item active' : 'nav-item'} style={{ width: '100%', textAlign: 'left' }} onClick={() => { setSelectedMessage(null); setFolderId(folder.id); }}>
                   {folder.name}
                 </button>
               ))}

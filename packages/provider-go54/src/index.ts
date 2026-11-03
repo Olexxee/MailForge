@@ -34,8 +34,8 @@ interface Go54SmtpConfig {
 }
 
 interface ImapAddress {
-  name?: string | null;
-  address?: string | null;
+  name?: string | null | undefined;
+  address?: string | null | undefined;
 }
 
 interface MimeNode {
@@ -281,10 +281,15 @@ const readBodyPart = async (
 const toSummary = (
   message: {
     uid: number;
-    envelope?: { subject?: string | null; from?: ImapAddress[]; to?: ImapAddress[]; date?: Date | string };
-    flags?: Set<string>;
-    internalDate?: Date | string;
-    size?: number;
+    envelope: {
+      subject?: string | null | undefined;
+      from?: ImapAddress[] | undefined;
+      to?: ImapAddress[] | undefined;
+      date?: Date | string | undefined;
+    } | undefined;
+    flags: Set<string> | undefined;
+    internalDate: Date | string | undefined;
+    size: number | undefined;
   },
   folderId: string,
   uidValidity: string,
@@ -396,7 +401,9 @@ export class Go54Provider implements MailProvider {
     return withImapClient(this.credentials, async (client) => {
       const lock = await client.getMailboxLock(folderId, { readOnly: true });
       try {
-        const uidValidity = String(client.mailbox?.uidValidity ?? '');
+        const mailbox = client.mailbox;
+        if (!mailbox) throw codedError('MAILBOX_NOT_SELECTED');
+        const uidValidity = String(mailbox.uidValidity ?? '');
         if (!uidValidity || uidValidity !== identifier.uidValidity) throw codedError('MAILBOX_UIDVALIDITY_CHANGED');
         const message = await client.fetchOne(identifier.uid, {
           envelope: true,

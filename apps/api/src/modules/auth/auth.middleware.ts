@@ -4,6 +4,21 @@ import { hashToken, safeEqual } from '../../lib/crypto.js';
 import { getSession } from './auth.service.js';
 import { readCookie } from './auth.controller.js';
 
+export const requireTrustedOrigin: RequestHandler = (req, _res, next) => {
+  const origin = req.header('origin');
+  if (!origin) { next(); return; }
+  try {
+    if (new URL(origin).origin !== new URL(process.env.WEB_ORIGIN ?? 'http://localhost:5173').origin) {
+      next(new AppError('ORIGIN_NOT_ALLOWED', 403, 'Request origin is not allowed'));
+      return;
+    }
+  } catch {
+    next(new AppError('ORIGIN_NOT_ALLOWED', 403, 'Request origin is not allowed'));
+    return;
+  }
+  next();
+};
+
 export const requireAuth: RequestHandler = async (req, res, next) => {
   try {
     const token = readCookie(req.headers.cookie, 'mf_session');
@@ -12,8 +27,10 @@ export const requireAuth: RequestHandler = async (req, res, next) => {
     if (!session) throw new AppError('UNAUTHENTICATED', 401, 'Authentication required');
     res.locals.auth = {
       userId: session.user.id,
+      email: session.user.email,
       sessionId: session.id,
       csrfTokenHash: session.csrfTokenHash,
+      absoluteExpiresAt: session.absoluteExpiresAt,
     };
     next();
   } catch (error) {

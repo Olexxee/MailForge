@@ -2,7 +2,7 @@
 
 Private, multi-domain email management for an organisation.
 
-**Current status:** Phase 0 implementation is in progress on PR #2. The initial monorepo, API foundation, Prisma schema, provider contracts, web shell, worker entry point, and CI workflow are in place. Phase 0 is not complete until CI passes and the remaining exit criteria are verified.
+**Current status:** Phase 0 foundation and CI verification are merged. Phase 1 authentication and organisation access are being implemented on `feat/phase-1-auth-organisation`; this phase is not complete until its migration, tests, and security checks pass in CI. Dependency lockfile and npm audit findings remain Phase 0 hardening items.
 
 MailForge connects existing email providers and gives authorised staff one unified webmail and administration interface. It is not an email host and will not operate its own mail server.
 
@@ -288,8 +288,8 @@ An authorised staff member signs in, opens the GO54 mailbox, reads a message, an
 - [x] Blueprint documentation reviewed
 - [x] Core technology and architecture direction approved
 - [x] Phase sequence and foundation requirements defined
-- [ ] Phase 0 implementation
-- [ ] Phase 1 authentication and organisation
+- [x] Phase 0 initial implementation and CI baseline (dependency reproducibility/security audit follow-up remains)
+- [ ] Phase 1 authentication and organisation access
 - [ ] Phase 2 GO54 provider/mailboxes
 - [ ] Phase 3 inbox and reading
 - [ ] Phase 4 compose and sending

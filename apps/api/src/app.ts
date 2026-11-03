@@ -6,11 +6,13 @@ import pino from 'pino';
 import { pinoHttp } from 'pino-http';
 import { randomUUID } from 'node:crypto';
 import { ZodError, z } from 'zod';
-import { rateLimit } from 'express-rate-limit';
 import { API_PREFIX } from '@mailforge/shared';
+import { AppError } from './lib/http.js';
 import { authRouter } from './modules/auth/auth.route.js';
 import { organisationsRouter } from './modules/organisations/organisations.route.js';
 import { invitationsRouter } from './modules/invitations/invitations.route.js';
+
+export { AppError, asyncWrapper, createRateLimiter, validateBody } from './lib/http.js';
 
 const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
@@ -26,25 +28,6 @@ export const logger = pino({
     censor: '[REDACTED]',
   },
 });
-
-export class AppError extends Error {
-  constructor(
-    public readonly code: string,
-    public readonly statusCode: number,
-    message: string,
-    public readonly details?: unknown,
-  ) {
-    super(message);
-    this.name = 'AppError';
-  }
-}
-
-export const asyncWrapper = (handler: RequestHandler): RequestHandler => (req, res, next) => {
-  Promise.resolve(handler(req, res, next)).catch(next);
-};
-
-export const createRateLimiter = (limit: number): RequestHandler =>
-  rateLimit({ windowMs: 15 * 60 * 1000, limit, standardHeaders: 'draft-8', legacyHeaders: false });
 
 const requestContext: RequestHandler = (_req, res, next) => {
   const id = randomUUID();
@@ -91,16 +74,6 @@ export const errorHandler: ErrorRequestHandler = (error: unknown, _req, res, nex
   });
 };
 
-export const validateBody = (schema: z.ZodType): RequestHandler => (req, _res, next) => {
-  const parsed = schema.safeParse(req.body);
-  if (!parsed.success) {
-    next(parsed.error);
-    return;
-  }
-  req.body = parsed.data;
-  next();
-};
-
 export const app = express();
 app.disable('x-powered-by');
 app.use(requestContext);
@@ -111,8 +84,8 @@ app.use(express.json({ limit: '1mb' }));
 app.use(express.urlencoded({ extended: false, limit: '1mb' }));
 
 app.use(API_PREFIX + '/auth', authRouter);
-app.use(API_PREFIX + '/organisations', organisationsRouter);
 app.use(API_PREFIX, invitationsRouter);
+app.use(API_PREFIX + '/organisations', organisationsRouter);
 
 app.get(API_PREFIX + '/health/live', (_req, res) =>
   res.status(200).json({ success: true, data: { status: 'ok' }, requestId: res.locals.requestId }),

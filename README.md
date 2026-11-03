@@ -2,7 +2,7 @@
 
 Private, multi-domain email management for an organisation.
 
-**Current status:** Phase 0, Phase 1, and the Phase 2 domain/GO54/mailbox implementation are merged. Phase 3 read-only inbox API and GO54 IMAP folder/message retrieval are in progress on `feat/phase-3-inbox-reading`. Live GO54 protocol validation remains unperformed. Dependency lockfile and npm audit findings remain hardening items.
+**Current status:** Phase 0, Phase 1, and the Phase 2 domain/GO54/mailbox implementation are merged. Phase 3 read-only inbox API, GO54 IMAP folder/message retrieval, and the initial inbox UI are in progress on `feat/phase-3-inbox-reading`. Live GO54 protocol validation remains unperformed. Dependency lockfile and npm audit findings remain hardening items.
 
 MailForge connects existing email providers and gives authorised staff one unified webmail and administration interface. It is not an email host and will not operate its own mail server.
 
@@ -29,7 +29,7 @@ Requirements: Node.js 22, npm 10+, and PostgreSQL 16.
    Remove the bootstrap values immediately after successful execution. The command refuses to run after an active owner exists.
 6. Configure `VITE_API_URL` for the web app when the API is not at `http://localhost:4000/api/v1`. Configure the API's `WEB_ORIGIN` to the exact browser origin.
 
-Do not commit `.env` or use production credentials in local development. Before connecting a mailbox, generate a 32-byte key with `openssl rand -base64 32` and add it to `CREDENTIAL_ENCRYPTION_KEYS_JSON` as a versioned JSON keyring. Configure the exact GO54 IMAP/SMTP hosts from the mailbox account settings in `GO54_IMAP_HOST` and `GO54_SMTP_HOST`; do not guess them. Ports 993/465 use implicit TLS; ports 143/587 require STARTTLS.
+Do not commit `.env` or use production credentials in local development. Before connecting a mailbox, generate a 32-byte key with `openssl rand -base64 32` and add it to `CREDENTIAL_ENCRYPTION_KEYS_JSON` as a versioned JSON keyring. The supplied GO54 account settings show `imap.go54mail.com:993` (SSL/TLS) and `smtp.go54mail.com:587` (STARTTLS); these host values are prefilled in `.env.example`. Enter the mailbox password through the authenticated mailbox connection form. It is encrypted before database persistence; never put it in source code, `.env.example`, or the frontend bundle.
 
 ## Product target
 

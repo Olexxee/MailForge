@@ -6,10 +6,16 @@ const SESSION_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
 export const authenticateCredentials = async (email: string, password: string) => {
   const user = await findUserByEmail(email);
-  // Run a password hash for unknown users as well, reducing account-enumeration timing differences.
-  const dummyHash = `scrypt$32768$8$1${Buffer.from('0123456789abcdef').toString('base64url')}${Buffer.alloc(64).toString('base64url')}`;
+  // Use the same KDF cost for unknown emails to reduce account-enumeration timing differences.
+  const dummyHash = [
+    'scrypt', '32768', '8', '1',
+    Buffer.from('0123456789abcdef').toString('base64url'),
+    Buffer.alloc(64).toString('base64url'),
+  ].join('$');
   const valid = await verifyPassword(password, user?.passwordHash ?? dummyHash);
-  if (!user || !valid || !user.isActive) throw new AppError('INVALID_CREDENTIALS', 401, 'Email or password is incorrect');
+  if (!user || !valid || !user.isActive) {
+    throw new AppError('INVALID_CREDENTIALS', 401, 'Email or password is incorrect');
+  }
   return user;
 };
 
@@ -50,7 +56,3 @@ export const getCurrentUser = async (userId: string) => {
   if (!user || !user.isActive) throw new AppError('UNAUTHENTICATED', 401, 'Authentication required');
   return user;
 };
-
-export const registerInvitedUser = async (input: {
-  email: string; displayName: string; password: string; invitationId: string;
-}) => hashPassword(input.password);

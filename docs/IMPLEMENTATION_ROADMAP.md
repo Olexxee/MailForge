@@ -54,12 +54,15 @@ Keep all five files together inside each feature directory. Do not create global
 
 ## Phase 2 — Domains, provider connections, and mailboxes
 
-- Organisation-owned domain, provider connection, and mailbox records.
-- Encrypted provider credentials with key-version metadata.
-- GO54 adapter configuration and separate IMAP/SMTP connectivity and authentication checks.
-- Mailbox registration, explicit user-to-mailbox grants, and provider health/capability reporting.
+- Organisation-owned domain records with TXT ownership challenges, verification, and challenge rotation.
+- Same-organisation composite constraints for domains, provider connections, mailboxes, and mailbox grants.
+- Versioned AES-256-GCM credential encryption with a configurable keyring.
+- GO54 adapter using trusted server-side host settings; separate IMAP and SMTP checks with strict TLS and bounded timeouts.
+- Mailbox registration restricted to verified domains, explicit hierarchical grants, grant revocation, and health reporting.
+- Organisation membership deactivation revokes mailbox grants and protects the last mailbox administrator.
+- Administration UI for domains, mailbox connection, protocol validation, and mailbox grants.
 
-**Exit criteria:** IMAP and SMTP are independently validated; organisation and mailbox permissions are enforced; encryption/redaction tests pass; validation sends no real email. Confirm GO54 account-level IMAP/SMTP availability.
+**Exit criteria:** Prisma migration applies on a clean database; domain verification is exact and race-safe; IMAP and SMTP checks are independent; mailbox and organisation isolation are enforced; credential encryption/key rotation/redaction tests pass; deactivation and last-admin protections pass; validation sends no real email. Confirm the exact GO54 account-level endpoints and protocol availability before real validation.
 
 ## Phase 3 — Inbox, folders, and reading
 

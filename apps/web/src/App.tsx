@@ -34,7 +34,7 @@ export default function App() {
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
-  const [inviteToken, setInviteToken] = useState(readInviteToken);
+  const [inviteToken, setInviteToken] = useState(readInviteToken);\n  const [showInviteLogin, setShowInviteLogin] = useState(false);
   const [createdInvite, setCreatedInvite] = useState<InviteResult | null>(null);
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
@@ -53,7 +53,7 @@ export default function App() {
     setUser(activeUser);
     const result = await apiRequest<{ organisations: Organisation[] }>('/organisations');
     setOrganisations(result.organisations);
-    const nextOrganisation = result.organisations.find((item) => item.id === organisationId) ?? result.organisations[0];
+    const nextOrganisation = result.organisations[0];
     if (!nextOrganisation) {
       setOrganisationId('');
       setMembers([]);
@@ -236,7 +236,7 @@ export default function App() {
     return <main className="loading-screen"><div className="brand-mark">M</div><p>Loading MailForge…</p></main>;
   }
 
-  if (inviteToken && !user) {
+  if (inviteToken && !user && !showInviteLogin) {
     return (
       <main className="auth-shell">
         <section className="auth-card">
@@ -250,7 +250,7 @@ export default function App() {
             {error && <p className="error-text">{error}</p>}
             <button className="primary-button" disabled={busy}>{busy ? 'Accepting…' : 'Create account and join'}</button>
           </form>
-          <p className="muted small-copy">Already have an account? <button className="text-button" onClick={() => { clearInviteToken(); setInviteToken(''); }}>Sign in first</button>, then open the invitation link again.</p>
+          <p className="muted small-copy">Already have an account? <button className="text-button" onClick={() => setShowInviteLogin(true)}>Sign in first</button> to accept this invitation.</p>
         </section>
       </main>
     );
@@ -270,7 +270,7 @@ export default function App() {
             {error && <p className="error-text">{error}</p>}
             <button className="primary-button" disabled={busy}>{busy ? 'Signing in…' : 'Sign in'}</button>
           </form>
-          <p className="muted small-copy">Access is invitation-only. Public registration is disabled.</p>
+          {inviteToken && <p className="muted small-copy"><button className="text-button" onClick={() => setShowInviteLogin(false)}>Back to invitation</button></p>}\n          <p className="muted small-copy">Access is invitation-only. Public registration is disabled.</p>
         </section>
       </main>
     );
@@ -325,7 +325,7 @@ export default function App() {
       <main className="main-panel">
         <header className="topbar">
           <div><span className="breadcrumb">Workspace</span><span className="breadcrumb-separator">/</span><strong>{page === 'members' ? 'Members' : 'Invitations'}</strong></div>
-          <div className="topbar-right"><span className="secure-indicator"><i /> Secure session</span><span className="role-pill">{currentOrganisation?.role ?? 'MEMBER'}</span></div>
+          <div className="topbar-right"><span className="secure-indicator"><i /> Secure session</span><span className="role-pill">{currentOrganisation?.role ?? 'MEMBER'}</span><button className="signout-top" onClick={() => void handleLogout()} disabled={busy}>Sign out</button></div>
         </header>
 
         <div className="content-wrap">

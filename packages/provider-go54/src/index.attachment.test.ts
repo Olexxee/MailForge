@@ -35,6 +35,7 @@ const messageId = Buffer.from(JSON.stringify({ uidValidity: '123', uid: 7 })).to
 
 describe('Go54Provider attachment and read-state operations', () => {
   beforeEach(() => {
+    state.mailbox.uidValidity = '123';
     process.env.GO54_IMAP_HOST = 'imap.go54mail.com';
     process.env.GO54_IMAP_PORT = '993';
     state.connect.mockResolvedValue(undefined);

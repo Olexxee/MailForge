@@ -1,6 +1,7 @@
 import type { Request, Response } from 'express';
 import { AppError } from '../../lib/http.js';
-import { getCurrentUser, issueSession, revokeUserSession, rotateUserSession, authenticateCredentials } from './auth.service.js';\nimport { readCookie } from '../../lib/cookies.js';
+import { readCookie } from '../../lib/cookies.js';
+import { getCurrentUser, issueSession, revokeUserSession, rotateUserSession, authenticateCredentials } from './auth.service.js';
 
 const SESSION_COOKIE = 'mf_session';
 const CSRF_COOKIE = 'mf_csrf';
@@ -12,18 +13,6 @@ const cookieOptions = (maxAge?: number) => [
   ...(isProduction() ? ['Secure'] : []),
   ...(maxAge === undefined ? [] : [`Max-Age=${Math.floor(maxAge / 1000)}`]),
 ].join('; ');
-
-export const readCookie = (header: string | undefined, name: string): string | undefined => {
-  if (!header) return undefined;
-  for (const part of header.split(';')) {
-    const index = part.indexOf('=');
-    if (index < 0) continue;
-    if (part.slice(0, index).trim() === name) {
-      try { return decodeURIComponent(part.slice(index + 1).trim()); } catch { return undefined; }
-    }
-  }
-  return undefined;
-};
 
 export const setSessionCookies = (res: Response, sessionToken: string, csrfToken: string, expiresAt: Date) => {
   const maxAge = expiresAt.getTime() - Date.now();

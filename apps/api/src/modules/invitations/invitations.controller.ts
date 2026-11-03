@@ -7,7 +7,7 @@ export const createOrganisationInvitation = async (req: Request, res: Response) 
   const auth = res.locals.auth as { userId: string };
   const body = req.body as { email: string; role: 'ADMIN' | 'STAFF' };
   const invitation = await inviteMember({
-    organisationId: req.params.organisationId!,
+    organisationId: req.params.organisationId as string,
     actorId: auth.userId,
     email: body.email,
     role: body.role,
@@ -44,7 +44,7 @@ export const revokeOrganisationInvitation = async (req: Request, res: Response) 
   const auth = res.locals.auth as { userId: string };
   await revokeInvitation({
     organisationId: req.params.organisationId!,
-    invitationId: req.params.invitationId!,
+    invitationId: req.params.invitationId as string,
     actorId: auth.userId,
   });
   res.json({ success: true, data: { revoked: true }, requestId: res.locals.requestId });

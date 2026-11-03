@@ -15,7 +15,7 @@ import { domainsRouter } from './modules/domains/domains.route.js';
 import { mailboxesRouter } from './modules/mailboxes/mailboxes.route.js';
 import { providerConnectionsRouter } from './modules/provider-connections/provider-connections.route.js';
 
-export { AppError, asyncWrapper, createRateLimiter, validateBody } from './lib/http.js';
+export { AppError, asyncWrapper, createRateLimiter, validateBody, validateParams } from './lib/http.js';
 
 const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),

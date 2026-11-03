@@ -32,7 +32,7 @@ export const setSessionCookies = (res: Response, sessionToken: string, csrfToken
 
 export const clearSessionCookies = (res: Response) => {
   res.append('Set-Cookie', `${SESSION_COOKIE}=; ${cookieOptions(0)}`);
-  res.append('Set-Cookie', `${CSRF_COOKIE}=; Path=/api/v1; SameSite=None; ${process.env.NODE_ENV === 'production' ? 'Secure; ' : ''}Max-Age=0`);
+  res.append('Set-Cookie', `${CSRF_COOKIE}=; Path=/api/v1; ${process.env.NODE_ENV === 'production' ? 'SameSite=None; Secure; ' : 'SameSite=Lax; '}Max-Age=0`);
 };
 
 const userPayload = (user: Awaited<ReturnType<typeof getCurrentUser>>) => ({

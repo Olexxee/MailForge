@@ -74,3 +74,35 @@ export const revokeOrganisationInvitation = async (input: {
     },
   });
 };
+
+export const acceptInvitationForExistingUser = async (input: {
+  token: string; userId: string; email: string;
+}) => {
+  const invitation = await findInvitationByTokenHash(hashToken(input.token));
+  if (!invitation || invitation.email !== input.email || invitation.acceptedAt ||
+      invitation.revokedAt || invitation.expiresAt <= new Date()) {
+    throw new AppError('INVITATION_INVALID', 400, 'Invitation is invalid or has expired');
+  }
+  await prisma.$transaction(async (tx) => {
+    const claimed = await tx.organizationInvitation.updateMany({
+      where: { id: invitation.id, acceptedAt: null, revokedAt: null, expiresAt: { gt: new Date() } },
+      data: { acceptedAt: new Date() },
+    });
+    if (claimed.count !== 1) throw new AppError('INVITATION_INVALID', 400, 'Invitation is invalid or has expired');
+    await tx.organizationMembership.upsert({
+      where: { organisationId_userId: { organisationId: invitation.organisationId, userId: input.userId } },
+      create: { organisationId: invitation.organisationId, userId: input.userId, role: invitation.role },
+      update: { role: invitation.role, isActive: true },
+    });
+    await tx.auditLog.create({
+      data: {
+        organisationId: invitation.organisationId,
+        actorId: input.userId,
+        action: 'INVITATION_ACCEPTED',
+        resourceType: 'OrganizationInvitation',
+        resourceId: invitation.id,
+        metadata: { role: invitation.role },
+      },
+    });
+  });
+};

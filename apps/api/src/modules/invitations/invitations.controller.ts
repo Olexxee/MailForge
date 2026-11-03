@@ -43,7 +43,7 @@ export const acceptOrganisationInvitation = async (req: Request, res: Response) 
 export const revokeOrganisationInvitation = async (req: Request, res: Response) => {
   const auth = res.locals.auth as { userId: string };
   await revokeInvitation({
-    organisationId: req.params.organisationId!,
+    organisationId: req.params.organisationId as string,
     invitationId: req.params.invitationId as string,
     actorId: auth.userId,
   });

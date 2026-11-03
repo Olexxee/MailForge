@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
-import { apiRequest } from './lib/api.js';
+import { apiDownload, apiRequest } from './lib/api.js';
 
-type Mailbox = { id: string; email: string; displayName: string | null };
+type Mailbox = { id: string; email: string; displayName: string | null; accessGrants: { permission: 'READ' | 'SEND' | 'MANAGE' | 'ADMINISTER' }[] };
 type Folder = { id: string; name: string; specialUse: string | null };
 type MessageSummary = {
   id: string;
@@ -40,7 +40,11 @@ export function InboxWorkspace({ organisationId }: { organisationId: string }) {
   const [selectedMessage, setSelectedMessage] = useState<MessageDetail | null>(null);
   const [loading, setLoading] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState(false);
+  const [updatingReadState, setUpdatingReadState] = useState(false);
+  const [downloadingPart, setDownloadingPart] = useState('');
   const [error, setError] = useState('');
+  const selectedMailbox = mailboxes.find((mailbox) => mailbox.id === mailboxId);
+  const canManageReadState = selectedMailbox?.accessGrants.some((grant) => grant.permission === 'MANAGE' || grant.permission === 'ADMINISTER') ?? false;
 
   const loadMailboxes = useCallback(async () => {
     setError('');
@@ -116,6 +120,44 @@ export function InboxWorkspace({ organisationId }: { organisationId: string }) {
     if (mailboxId && folderId && foldersMailboxId === mailboxId) void loadMessages(true);
   }, [mailboxId, folderId, foldersMailboxId]); // Loading is intentionally triggered only when the selected mailbox/folder changes.
 
+
+  const toggleReadState = async () => {
+    if (!selectedMessage || !mailboxId || !folderId || !canManageReadState) return;
+    setUpdatingReadState(true);
+    setError('');
+    const unread = !selectedMessage.unread;
+    try {
+      const result = await apiRequest<{ unread: boolean }>(
+        `/organisations/${organisationId}/mailboxes/${mailboxId}/folders/${folderId}/messages/${selectedMessage.id}/read-state`,
+        { method: 'PATCH', body: { unread } },
+      );
+      setSelectedMessage((current) => current ? { ...current, unread: result.unread } : current);
+      setMessages((current) => current.map((message) =>
+        message.id === selectedMessage.id ? { ...message, unread: result.unread } : message,
+      ));
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Could not update the message read state.');
+    } finally {
+      setUpdatingReadState(false);
+    }
+  };
+
+  const downloadMessageAttachment = async (attachment: MessageDetail['attachments'][number]) => {
+    if (!mailboxId || !folderId || !selectedMessage) return;
+    setDownloadingPart(attachment.partId);
+    setError('');
+    try {
+      await apiDownload(
+        `/organisations/${organisationId}/mailboxes/${mailboxId}/folders/${folderId}/messages/${selectedMessage.id}/attachments/${encodeURIComponent(attachment.partId)}`,
+        attachment.filename,
+      );
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Could not download this attachment.');
+    } finally {
+      setDownloadingPart('');
+    }
+  };
+
   const openMessage = async (message: MessageSummary) => {
     if (!mailboxId || !folderId) return;
     setLoadingMessage(true);
@@ -160,7 +202,10 @@ export function InboxWorkspace({ organisationId }: { organisationId: string }) {
             <div className="inbox-message-pane">
               {selectedMessage ? (
                 <article>
-                  <button className="small-action" onClick={() => setSelectedMessage(null)}>← Back to messages</button>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center', justifyContent: 'space-between' }}>
+                    <button className="small-action" onClick={() => setSelectedMessage(null)}>← Back to messages</button>
+                    {canManageReadState && <button className="small-action" onClick={() => void toggleReadState()} disabled={updatingReadState}>{updatingReadState ? 'Updating…' : selectedMessage.unread ? 'Mark as read' : 'Mark as unread'}</button>}
+                  </div>
                   <h2 style={{ marginTop: 18 }}>{selectedMessage.subject}</h2>
                   <p className="muted small-copy">{selectedMessage.from} · {formatDate(selectedMessage.receivedAt)}</p>
                   <p className="small-copy"><strong>To:</strong> {selectedMessage.to.join(', ') || '—'}</p>
@@ -180,8 +225,15 @@ export function InboxWorkspace({ organisationId }: { organisationId: string }) {
                   {selectedMessage.attachments.length > 0 && (
                     <section style={{ marginTop: 24 }}>
                       <h3>Attachments</h3>
-                      <ul>{selectedMessage.attachments.map((attachment) => <li key={attachment.partId}>{attachment.filename} · {formatSize(attachment.size)} <span className="muted">({attachment.contentType})</span></li>)}</ul>
-                      <p className="panel-footnote">Attachment downloads are not enabled yet.</p>
+                      <ul>{selectedMessage.attachments.map((attachment) => (
+                        <li key={attachment.partId} style={{ marginBottom: 8 }}>
+                          {attachment.filename} · {formatSize(attachment.size)} <span className="muted">({attachment.contentType})</span>{' '}
+                          <button className="small-action" onClick={() => void downloadMessageAttachment(attachment)} disabled={downloadingPart === attachment.partId}>
+                            {downloadingPart === attachment.partId ? 'Downloading…' : 'Download'}
+                          </button>
+                        </li>
+                      ))}</ul>
+                      <p className="panel-footnote">Downloads are limited to 10 MiB per attachment.</p>
                     </section>
                   )}
                 </article>

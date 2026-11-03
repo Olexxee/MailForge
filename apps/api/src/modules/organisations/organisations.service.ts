@@ -34,11 +34,19 @@ export const changeOrganisationMembership = async (input: {
   const actor = await assertOrganisationRole(input.organisationId, input.actorId, ['OWNER', 'ADMIN']);
   const target = await findMembership(input.organisationId, input.targetUserId);
   if (!target) throw new AppError('MEMBERSHIP_NOT_FOUND', 404, 'Organisation membership was not found');
-  if (target.role === 'OWNER') throw new AppError('OWNER_PROTECTED', 409, 'Owner membership cannot be changed through this endpoint');
+  if (target.role === 'OWNER') {
+    throw new AppError('OWNER_PROTECTED', 409, 'Owner membership cannot be changed through this endpoint');
+  }
   if (actor.role === 'ADMIN' && (target.role !== 'STAFF' || input.role === 'ADMIN')) {
     throw new AppError('ACCESS_DENIED', 403, 'Administrators may manage staff members only');
   }
-  const updated = await updateMembership({\n    organisationId: input.organisationId,\n    userId: input.targetUserId,\n    actorId: input.actorId,\n    ...(input.role === undefined ? {} : { role: input.role }),\n    ...(input.isActive === undefined ? {} : { isActive: input.isActive }),\n  });
+  const updated = await updateMembership({
+    organisationId: input.organisationId,
+    userId: input.targetUserId,
+    actorId: input.actorId,
+    ...(input.role === undefined ? {} : { role: input.role }),
+    ...(input.isActive === undefined ? {} : { isActive: input.isActive }),
+  });
   if (!updated) throw new AppError('MEMBERSHIP_NOT_FOUND', 404, 'Organisation membership was not found');
   return updated;
 };

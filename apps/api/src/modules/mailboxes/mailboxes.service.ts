@@ -151,6 +151,9 @@ export const revokeMailboxAccess = async (input: {
       actorId: input.actorId,
     });
   } catch (error) {
+    if (error instanceof Error && error.message === 'MAILBOX_ADMIN_ACCESS_REVOKED') {
+      throw new AppError('MAILBOX_ACCESS_DENIED', 403, 'Mailbox administrator access is no longer active');
+    }
     if (error && typeof error === 'object' && 'code' in error && error.code === 'P2034') {
       throw new AppError('ACCESS_UPDATE_CONFLICT', 409, 'Mailbox access changed concurrently. Reload and retry');
     }

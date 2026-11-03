@@ -11,6 +11,9 @@ import { AppError } from './lib/http.js';
 import { authRouter } from './modules/auth/auth.route.js';
 import { organisationsRouter } from './modules/organisations/organisations.route.js';
 import { invitationsRouter } from './modules/invitations/invitations.route.js';
+import { domainsRouter } from './modules/domains/domains.route.js';
+import { mailboxesRouter } from './modules/mailboxes/mailboxes.route.js';
+import { providerConnectionsRouter } from './modules/provider-connections/provider-connections.route.js';
 
 export { AppError, asyncWrapper, createRateLimiter, validateBody } from './lib/http.js';
 
@@ -87,6 +90,9 @@ app.use(express.urlencoded({ extended: false, limit: '1mb' }));
 app.use(API_PREFIX + '/auth', authRouter);
 app.use(API_PREFIX, invitationsRouter);
 app.use(API_PREFIX + '/organisations', organisationsRouter);
+app.use(API_PREFIX, domainsRouter);
+app.use(API_PREFIX, mailboxesRouter);
+app.use(API_PREFIX, providerConnectionsRouter);
 
 app.get(API_PREFIX + '/health/live', (_req, res) =>
   res.status(200).json({ success: true, data: { status: 'ok' }, requestId: res.locals.requestId }),

@@ -115,7 +115,7 @@ export const getMailboxMessages = async (input: {
       ...(input.cursor === undefined ? {} : { cursor: input.cursor }),
     });
     return {
-      messages: page.messages,
+      messages: page.messages.map((message) => ({ ...message, folderId: input.folderId })),
       nextCursor: page.nextCursor,
     };
   } catch (error) {
@@ -137,6 +137,7 @@ export const getMailboxMessage = async (input: {
     if (!message) throw new AppError('MESSAGE_NOT_FOUND', 404, 'Message was not found in this folder');
     return {
       ...message,
+      folderId: input.folderId,
       html: message.html === null ? null : sanitizeMessageHtml(message.html),
     };
   } catch (error) {

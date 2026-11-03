@@ -12,7 +12,12 @@ export const inviteMember = async (input: {
     throw new AppError('ACCESS_DENIED', 403, 'Administrators may invite staff members only');
   }
   const existing = await prisma.user.findUnique({ where: { email: input.email } });
-  if (existing) throw new AppError('ACCOUNT_EXISTS', 409, 'This email already has a MailForge account; existing-account invitations are not enabled yet');
+  if (existing) {
+    const membership = await prisma.organizationMembership.findUnique({
+      where: { organisationId_userId: { organisationId: input.organisationId, userId: existing.id } },
+    });
+    if (membership?.isActive) throw new AppError('ALREADY_A_MEMBER', 409, 'This user is already a member');
+  }
 
   const token = createOpaqueToken(32);
   const invitation = await createInvitation({
@@ -33,7 +38,6 @@ export const inviteMember = async (input: {
       metadata: { email: input.email, role: input.role },
     },
   });
-  // Return the raw token once; only its SHA-256 digest is persisted.
   return { id: invitation.id, email: invitation.email, role: invitation.role, expiresAt: invitation.expiresAt, token };
 };
 
@@ -53,26 +57,9 @@ export const acceptInvitation = async (input: {
   });
   if (!result) throw new AppError('INVITATION_INVALID', 400, 'Invitation is invalid or has expired');
   if (result.existingUser) {
-    throw new AppError('ACCOUNT_EXISTS', 409, 'An account already exists for this email; sign in and ask an organisation admin to grant access');
+    throw new AppError('ACCOUNT_EXISTS', 409, 'An account already exists; sign in and accept the invitation using the authenticated invitation endpoint');
   }
   return { userId: result.user.id, email: result.user.email, displayName: result.user.displayName };
-};
-
-export const revokeOrganisationInvitation = async (input: {
-  organisationId: string; invitationId: string; actorId: string;
-}) => {
-  await assertOrganisationRole(input.organisationId, input.actorId, ['OWNER', 'ADMIN']);
-  const result = await revokeInvitation(input.organisationId, input.invitationId);
-  if (result.count !== 1) throw new AppError('INVITATION_NOT_FOUND', 404, 'Pending invitation was not found');
-  await prisma.auditLog.create({
-    data: {
-      organisationId: input.organisationId,
-      actorId: input.actorId,
-      action: 'INVITATION_REVOKED',
-      resourceType: 'OrganizationInvitation',
-      resourceId: input.invitationId,
-    },
-  });
 };
 
 export const acceptInvitationForExistingUser = async (input: {
@@ -104,5 +91,22 @@ export const acceptInvitationForExistingUser = async (input: {
         metadata: { role: invitation.role },
       },
     });
+  });
+};
+
+export const revokeOrganisationInvitation = async (input: {
+  organisationId: string; invitationId: string; actorId: string;
+}) => {
+  await assertOrganisationRole(input.organisationId, input.actorId, ['OWNER', 'ADMIN']);
+  const result = await revokeInvitation(input.organisationId, input.invitationId);
+  if (result.count !== 1) throw new AppError('INVITATION_NOT_FOUND', 404, 'Pending invitation was not found');
+  await prisma.auditLog.create({
+    data: {
+      organisationId: input.organisationId,
+      actorId: input.actorId,
+      action: 'INVITATION_REVOKED',
+      resourceType: 'OrganizationInvitation',
+      resourceId: input.invitationId,
+    },
   });
 };

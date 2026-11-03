@@ -1,7 +1,7 @@
 import type { Request, Response } from 'express';
 import { issueSession } from '../auth/auth.service.js';
 import { setSessionCookies } from '../auth/auth.controller.js';
-import { acceptInvitation, inviteMember } from './invitations.service.js';
+import { acceptInvitation, inviteMember, revokeOrganisationInvitation as revokeInvitation } from './invitations.service.js';
 
 export const createOrganisationInvitation = async (req: Request, res: Response) => {
   const auth = res.locals.auth as { userId: string };
@@ -38,4 +38,14 @@ export const acceptOrganisationInvitation = async (req: Request, res: Response) 
     data: { user, csrfToken: session.csrfToken },
     requestId: res.locals.requestId,
   });
+};
+
+export const revokeOrganisationInvitation = async (req: Request, res: Response) => {
+  const auth = res.locals.auth as { userId: string };
+  await revokeInvitation({
+    organisationId: req.params.organisationId!,
+    invitationId: req.params.invitationId!,
+    actorId: auth.userId,
+  });
+  res.json({ success: true, data: { revoked: true }, requestId: res.locals.requestId });
 };

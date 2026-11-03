@@ -314,8 +314,8 @@ An authorised staff member signs in, opens the GO54 mailbox, reads a message, an
 - [x] Core technology and architecture direction approved
 - [x] Phase sequence and foundation requirements defined
 - [x] Phase 0 initial implementation and CI baseline (dependency reproducibility/security audit follow-up remains)
-- [ ] Phase 1 authentication and organisation access
-- [ ] Phase 2 GO54 provider/mailboxes
+- [x] Phase 1 authentication and organisation access
+- [ ] Phase 2 GO54 provider/mailboxes (implementation in progress on `feat/phase-2-domains-go54-mailboxes`)
 - [ ] Phase 3 inbox and reading
 - [ ] Phase 4 compose and sending
 - [ ] Phase 5 productivity

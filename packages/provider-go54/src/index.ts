@@ -2,6 +2,7 @@ import { ImapFlow } from 'imapflow';
 import nodemailer from 'nodemailer';
 import {
   type MailProvider,
+  type ProviderAttachmentDownload,
   type ProviderAttachmentSummary,
   type ProviderCapability,
   type ProviderFolder,
@@ -62,6 +63,7 @@ interface MessageIdentifier {
 const MAX_PAGE_SIZE = 50;
 const UID_SCAN_WINDOW = 10_000;
 const MAX_BODY_PART_BYTES = 256 * 1024;
+const MAX_ATTACHMENT_BYTES = 10 * 1024 * 1024;
 
 const codedError = (code: string): Error & { code: string } =>
   Object.assign(new Error(code), { code });
@@ -231,6 +233,17 @@ const walkMime = (node: MimeNode | undefined, result: {
   attachments: ProviderAttachmentSummary[];
 }): void => {
   if (!node) return;
+  if (isAttachment(node)) {
+    if (node.part) {
+      result.attachments.push({
+        partId: node.part,
+        filename: node.dispositionParameters?.filename ?? node.parameters?.name ?? 'attachment',
+        contentType: node.type && node.subtype ? node.type + '/' + node.subtype : 'application/octet-stream',
+        size: Math.max(0, node.size ?? 0),
+      });
+    }
+    return;
+  }
   if (node.childNodes?.length) {
     for (const child of node.childNodes) walkMime(child, result);
     return;
@@ -238,20 +251,20 @@ const walkMime = (node: MimeNode | undefined, result: {
   const contentType = (node.type ?? '').toLowerCase();
   const subtype = (node.subtype ?? '').toLowerCase();
   const part = node.part;
-  if (isAttachment(node)) {
-    if (part) {
-      result.attachments.push({
-        partId: part,
-        filename: node.dispositionParameters?.filename ?? node.parameters?.name ?? 'attachment',
-        contentType: contentType && subtype ? contentType + '/' + subtype : 'application/octet-stream',
-        size: Math.max(0, node.size ?? 0),
-      });
-    }
-    return;
-  }
   if (!part || contentType !== 'text') return;
   if (subtype === 'plain') result.plain.push(part);
   if (subtype === 'html') result.html.push(part);
+};
+
+
+const findAttachmentNode = (node: MimeNode | undefined, partId: string): MimeNode | null => {
+  if (!node) return null;
+  if (isAttachment(node) && node.part === partId) return node;
+  for (const child of node.childNodes ?? []) {
+    const found = findAttachmentNode(child, partId);
+    if (found) return found;
+  }
+  return null;
 };
 
 const readBodyPart = async (
@@ -431,4 +444,95 @@ export class Go54Provider implements MailProvider {
       }
     });
   }
+  async downloadAttachment(
+    folderId: string,
+    messageId: string,
+    partId: string,
+    maxBytes: number,
+  ): Promise<ProviderAttachmentDownload | null> {
+    if (
+      !folderId || folderId.length > 500 ||
+      !messageId || messageId.length > 512 ||
+      !/^[0-9]+(?:\\.[0-9]+)*$/.test(partId) ||
+      !Number.isSafeInteger(maxBytes) || maxBytes < 1 || maxBytes > MAX_ATTACHMENT_BYTES
+    ) throw codedError('ATTACHMENT_REQUEST_INVALID');
+
+    const identifier = decodeMessageId(messageId);
+    const client = createImapClient(this.credentials);
+    let connected = false;
+    let lock: Awaited<ReturnType<ImapFlow['getMailboxLock']>> | undefined;
+    let handedOff = false;
+    try {
+      await client.connect();
+      connected = true;
+      lock = await client.getMailboxLock(folderId, { readOnly: true });
+      const mailbox = client.mailbox;
+      if (!mailbox) throw codedError('MAILBOX_NOT_SELECTED');
+      const uidValidity = String(mailbox.uidValidity ?? '');
+      if (!uidValidity || uidValidity !== identifier.uidValidity) {
+        throw codedError('MAILBOX_UIDVALIDITY_CHANGED');
+      }
+      const message = await client.fetchOne(identifier.uid, { bodyStructure: true }, { uid: true });
+      if (!message) return null;
+      const node = findAttachmentNode(message.bodyStructure as MimeNode | undefined, partId);
+      if (!node) return null;
+      const size = Math.max(0, node.size ?? 0);
+      if (size > maxBytes) throw codedError('ATTACHMENT_TOO_LARGE');
+
+      const result = await client.download(identifier.uid, partId, {
+        uid: true,
+        maxBytes,
+        chunkSize: 64 * 1024,
+      });
+      if (!result.content) return null;
+
+      const content = result.content;
+      const stream = (async function* (): AsyncGenerator<Uint8Array> {
+        try {
+          for await (const chunk of content) {
+            yield Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk);
+          }
+        } finally {
+          lock?.release();
+          await client.logout().catch(() => undefined);
+        }
+      })();
+      handedOff = true;
+      return {
+        filename: node.dispositionParameters?.filename ?? node.parameters?.name ?? 'attachment',
+        contentType: node.type && node.subtype ? node.type + '/' + node.subtype : 'application/octet-stream',
+        size,
+        stream,
+      };
+    } finally {
+      if (!handedOff) {
+        lock?.release();
+        if (connected) await client.logout().catch(() => undefined);
+        else client.close();
+      }
+    }
+  }
+
+  async setMessageSeen(folderId: string, messageId: string, seen: boolean): Promise<void> {
+    if (!folderId || folderId.length > 500 || !messageId || messageId.length > 512) {
+      throw codedError('MAIL_MESSAGE_IDENTIFIER_INVALID');
+    }
+    const identifier = decodeMessageId(messageId);
+    await withImapClient(this.credentials, async (client) => {
+      const lock = await client.getMailboxLock(folderId);
+      try {
+        const mailbox = client.mailbox;
+        if (!mailbox) throw codedError('MAILBOX_NOT_SELECTED');
+        const uidValidity = String(mailbox.uidValidity ?? '');
+        if (!uidValidity || uidValidity !== identifier.uidValidity) {
+          throw codedError('MAILBOX_UIDVALIDITY_CHANGED');
+        }
+        if (seen) await client.messageFlagsAdd(identifier.uid, ['\\Seen'], { uid: true });
+        else await client.messageFlagsRemove(identifier.uid, ['\\Seen'], { uid: true });
+      } finally {
+        lock.release();
+      }
+    });
+  }
+
 }

@@ -83,18 +83,27 @@ export default function App() {
   const reloadOrganisation = useCallback(async (id: string) => {
     const selected = organisations.find((item) => item.id === id);
     setOrganisationId(id);
+    setMembers([]);
+    setInvitations([]);
+    setCreatedInvite(null);
+    setError('');
     if (!selected || (selected.role !== 'OWNER' && selected.role !== 'ADMIN')) {
       setPage('members');
-      setMembers([]);
-      setInvitations([]);
       return;
     }
-    const [memberResult, invitationResult] = await Promise.all([
-      apiRequest<{ members: Member[] }>(`/organisations/${id}/members`),
-      apiRequest<{ invitations: Invitation[] }>(`/organisations/${id}/invitations`),
-    ]);
-    setMembers(memberResult.members);
-    setInvitations(invitationResult.invitations);
+    setBusy(true);
+    try {
+      const [memberResult, invitationResult] = await Promise.all([
+        apiRequest<{ members: Member[] }>(`/organisations/${id}/members`),
+        apiRequest<{ invitations: Invitation[] }>(`/organisations/${id}/invitations`),
+      ]);
+      setMembers(memberResult.members);
+      setInvitations(invitationResult.invitations);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Could not load this organisation.');
+    } finally {
+      setBusy(false);
+    }
   }, [organisations]);
 
   useEffect(() => {
@@ -402,7 +411,10 @@ export default function App() {
                   <div className="invite-created">
                     <div><strong>Invitation created</strong><p>Share this link through an approved secure channel. It is shown only once.</p></div>
                     <code>{inviteUrl(createdInvite.invitationToken)}</code>
-                    <button className="secondary-button" onClick={() => void navigator.clipboard.writeText(inviteUrl(createdInvite.invitationToken))}>Copy invitation link</button>
+                    <button className="secondary-button" onClick={() => {
+                      void navigator.clipboard.writeText(inviteUrl(createdInvite.invitationToken))
+                        .catch(() => setError('Clipboard access failed. Copy the invitation link manually.'));
+                    }}>Copy invitation link</button>
                   </div>
                 )}
               </section>

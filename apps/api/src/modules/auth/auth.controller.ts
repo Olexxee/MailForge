@@ -4,11 +4,12 @@ import { getCurrentUser, issueSession, revokeUserSession, rotateUserSession, aut
 
 const SESSION_COOKIE = 'mf_session';
 const CSRF_COOKIE = 'mf_csrf';
+const isProduction = () => process.env.NODE_ENV === 'production';
 const cookieOptions = (maxAge?: number) => [
   'Path=/api/v1',
   'HttpOnly',
-  process.env.NODE_ENV === 'production' ? 'SameSite=None' : 'SameSite=Lax',
-  ...(process.env.NODE_ENV === 'production' ? ['Secure'] : []),
+  isProduction() ? 'SameSite=None' : 'SameSite=Lax',
+  ...(isProduction() ? ['Secure'] : []),
   ...(maxAge === undefined ? [] : [`Max-Age=${Math.floor(maxAge / 1000)}`]),
 ].join('; ');
 
@@ -27,19 +28,21 @@ export const readCookie = (header: string | undefined, name: string): string | u
 export const setSessionCookies = (res: Response, sessionToken: string, csrfToken: string, expiresAt: Date) => {
   const maxAge = expiresAt.getTime() - Date.now();
   res.append('Set-Cookie', `${SESSION_COOKIE}=${encodeURIComponent(sessionToken)}; ${cookieOptions(maxAge)}`);
-  res.append('Set-Cookie', `${CSRF_COOKIE}=${encodeURIComponent(csrfToken)}; Path=/api/v1; ${process.env.NODE_ENV === 'production' ? 'SameSite=None; Secure; ' : 'SameSite=Lax; '}Max-Age=${Math.floor(maxAge / 1000)}`);
+  const csrfAttributes = isProduction() ? 'SameSite=None; Secure;' : 'SameSite=Lax;';
+  res.append('Set-Cookie', `${CSRF_COOKIE}=${encodeURIComponent(csrfToken)}; Path=/api/v1; ${csrfAttributes} Max-Age=${Math.floor(maxAge / 1000)}`);
 };
 
 export const clearSessionCookies = (res: Response) => {
   res.append('Set-Cookie', `${SESSION_COOKIE}=; ${cookieOptions(0)}`);
-  res.append('Set-Cookie', `${CSRF_COOKIE}=; Path=/api/v1; ${process.env.NODE_ENV === 'production' ? 'SameSite=None; Secure; ' : 'SameSite=Lax; '}Max-Age=0`);
+  const csrfAttributes = isProduction() ? 'SameSite=None; Secure;' : 'SameSite=Lax;';
+  res.append('Set-Cookie', `${CSRF_COOKIE}=; Path=/api/v1; ${csrfAttributes} Max-Age=0`);
 };
 
 const userPayload = (user: Awaited<ReturnType<typeof getCurrentUser>>) => ({
   id: user.id,
   email: user.email,
   displayName: user.displayName,
-  memberships: user.memberships.map((membership) => ({
+  memberships: user.memberships.filter((membership) => membership.isActive).map((membership) => ({
     organisationId: membership.organisationId,
     organisationName: membership.organisation.name,
     role: membership.role,

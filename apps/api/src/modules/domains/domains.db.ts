@@ -34,9 +34,10 @@ export const markDomainRecordVerified = (input: {
   organisationId: string;
   domainId: string;
   actorId: string;
+  expectedToken: string;
 }) => prisma.$transaction(async (tx) => {
   const result = await tx.domain.updateMany({
-    where: { id: input.domainId, organisationId: input.organisationId, status: 'PENDING' },
+    where: { id: input.domainId, organisationId: input.organisationId, status: 'PENDING', verificationToken: input.expectedToken },
     data: { status: 'VERIFIED', verifiedAt: new Date() },
   });
   if (result.count === 1) {

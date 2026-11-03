@@ -31,3 +31,4 @@ Services must verify active user, organisation membership, resource ownership, m
 - `POST /api/v1/organisations/:organisationId/invitations/:invitationId/revoke`: OWNER/ADMIN only; revokes a pending invitation.
 
 All state-changing authenticated endpoints require the CSRF cookie and matching `x-csrf-token` header. Browser-origin requests must match configured `WEB_ORIGIN`. Owner bootstrap is a CLI operation, not an HTTP endpoint. Invitation email delivery is not yet connected; administrators must distribute the one-time token through an approved secure channel.
+\n- `GET /api/v1/auth/csrf`: authenticated, no-store endpoint that rotates and returns a fresh CSRF token for the current session. The web client calls this on startup because the CSRF cookie is host-only to the API origin.\n- `GET /api/v1/organisations/:organisationId/invitations`: OWNER/ADMIN only; lists pending, unexpired invitations without exposing token hashes.\n

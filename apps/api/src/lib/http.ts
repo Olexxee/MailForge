@@ -30,3 +30,13 @@ export const validateBody = (schema: ZodType): RequestHandler => (req, _res, nex
   req.body = parsed.data;
   next();
 };
+
+export const validateParams = (schema: ZodType): RequestHandler => (req, _res, next) => {
+  const parsed = schema.safeParse(req.params);
+  if (!parsed.success) {
+    next(parsed.error);
+    return;
+  }
+  req.params = parsed.data as typeof req.params;
+  next();
+};

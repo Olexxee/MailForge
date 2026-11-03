@@ -26,6 +26,6 @@ Mailbox/domain/provider connection must belong to same organisation; access cann
 - `Domain`: organisation-scoped normalised domain, DNS TXT verification challenge, PENDING/VERIFIED state, verifier audit.
 - `ProviderConnection`: organisation-scoped GO54 account identity, encrypted credential payload, key version, independent IMAP/SMTP statuses and safe last error code.
 - `Mailbox`: organisation, verified domain, provider connection, email identity, display name and active/disabled state.
-- `MailboxAccess`: organisation-scoped explicit grant to an active user, permission level, grantor and revocation timestamp. The database enforces that mailbox and organisation IDs match using composite foreign keys.
+- `MailboxAccess`: organisation-scoped explicit grant to an active user, permission level, grantor and revocation timestamp. Composite foreign keys enforce that the mailbox, target membership, grantor membership, and organisation all match.
 
 Provider credentials are encrypted before insertion. Message bodies, attachments, and mailbox content are not cached in this phase.

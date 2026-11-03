@@ -19,35 +19,37 @@ export interface Go54HealthChecks {
   checkSmtp: () => Promise<void>;
 }
 
-interface Go54ServerConfig {
-  imapHost: string;
-  imapPort: 993 | 143;
-  smtpHost: string;
-  smtpPort: 465 | 587;
+interface Go54ImapConfig {
+  host: string;
+  port: 993 | 143;
 }
 
-const codedError = (code: string): Error & { code: string } =>
-  Object.assign(new Error(code), { code });
+interface Go54SmtpConfig {
+  host: string;
+  port: 465 | 587;
+}
 
-const readServerConfig = (): Go54ServerConfig => {
-  const imapHost = process.env.GO54_IMAP_HOST?.trim();
-  const smtpHost = process.env.GO54_SMTP_HOST?.trim();
-  if (!imapHost) throw codedError('GO54_IMAP_HOST_NOT_CONFIGURED');
-  if (!smtpHost) throw codedError('GO54_SMTP_HOST_NOT_CONFIGURED');
-  const hostnamePattern = /^(?=.{1,253}$)[a-zA-Z0-9](?:[a-zA-Z0-9.-]*[a-zA-Z0-9])?$/;
-  if (!hostnamePattern.test(imapHost) || !hostnamePattern.test(smtpHost)) {
-    throw codedError('GO54_HOST_CONFIGURATION_INVALID');
-  }
-  const imapPort = Number(process.env.GO54_IMAP_PORT ?? '993');
-  const smtpPort = Number(process.env.GO54_SMTP_PORT ?? '465');
-  if (imapPort !== 993 && imapPort !== 143) throw codedError('GO54_IMAP_PORT_UNSUPPORTED');
-  if (smtpPort !== 465 && smtpPort !== 587) throw codedError('GO54_SMTP_PORT_UNSUPPORTED');
-  return {
-    imapHost,
-    imapPort,
-    smtpHost,
-    smtpPort,
-  };
+const validateHostname = (host: string, errorCode: string): string => {
+  const value = host.trim();
+  const pattern = /^(?=.{1,253}$)[a-zA-Z0-9](?:[a-zA-Z0-9.-]*[a-zA-Z0-9])?$/;
+  if (!pattern.test(value)) throw codedError(errorCode);
+  return value;
+};
+
+const readImapConfig = (): Go54ImapConfig => {
+  const hostValue = process.env.GO54_IMAP_HOST;
+  if (!hostValue?.trim()) throw codedError('GO54_IMAP_HOST_NOT_CONFIGURED');
+  const port = Number(process.env.GO54_IMAP_PORT ?? '993');
+  if (port !== 993 && port !== 143) throw codedError('GO54_IMAP_PORT_UNSUPPORTED');
+  return { host: validateHostname(hostValue, 'GO54_IMAP_HOST_INVALID'), port };
+};
+
+const readSmtpConfig = (): Go54SmtpConfig => {
+  const hostValue = process.env.GO54_SMTP_HOST;
+  if (!hostValue?.trim()) throw codedError('GO54_SMTP_HOST_NOT_CONFIGURED');
+  const port = Number(process.env.GO54_SMTP_PORT ?? '465');
+  if (port !== 465 && port !== 587) throw codedError('GO54_SMTP_PORT_UNSUPPORTED');
+  return { host: validateHostname(hostValue, 'GO54_SMTP_HOST_INVALID'), port };
 };
 
 const safeErrorCode = (error: unknown): string => {
@@ -59,12 +61,12 @@ const safeErrorCode = (error: unknown): string => {
 };
 
 const checkImap = async (credentials: Go54Credentials): Promise<void> => {
-  const config = readServerConfig();
+  const config = readImapConfig();
   const client = new ImapFlow({
-    host: config.imapHost,
-    port: config.imapPort,
-    secure: config.imapPort === 993,
-    ...(config.imapPort === 143 ? { doSTARTTLS: true } : {}),
+    host: config.host,
+    port: config.port,
+    secure: config.port === 993,
+    ...(config.port === 143 ? { doSTARTTLS: true } : {}),
     auth: { user: credentials.email, pass: credentials.password },
     logger: false,
     connectionTimeout: 10_000,
@@ -82,11 +84,11 @@ const checkImap = async (credentials: Go54Credentials): Promise<void> => {
 };
 
 const checkSmtp = async (credentials: Go54Credentials): Promise<void> => {
-  const config = readServerConfig();
-  const implicitTls = config.smtpPort === 465;
+  const config = readSmtpConfig();
+  const implicitTls = config.port === 465;
   const transporter = nodemailer.createTransport({
-    host: config.smtpHost,
-    port: config.smtpPort,
+    host: config.host,
+    port: config.port,
     secure: implicitTls,
     ...(!implicitTls ? { requireTLS: true } : {}),
     auth: { user: credentials.email, pass: credentials.password },

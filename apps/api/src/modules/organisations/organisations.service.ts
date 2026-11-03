@@ -1,4 +1,4 @@
-import { AppError } from '../../app.js';
+import { AppError } from '../../lib/http.js';
 import { findMembership, findMembershipsForUser, listMembers, updateMembership } from './organisations.db.js';
 
 export const getMyOrganisations = async (userId: string) => {

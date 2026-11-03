@@ -47,7 +47,7 @@ export const updateMembership = async (input: {
           userId: { not: input.userId },
           permission: 'ADMINISTER',
           revokedAt: null,
-          user: { isActive: true, memberships: { some: { organisationId: input.organisationId, isActive: true } } },
+          membership: { isActive: true, user: { isActive: true } },
         },
       });
       if (otherAdministrators === 0) throw new Error('LAST_MAILBOX_ADMIN');

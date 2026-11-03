@@ -2,7 +2,7 @@ import { AppError } from '../../lib/http.js';
 import { createOpaqueToken, hashPassword, hashToken } from '../../lib/crypto.js';
 import { prisma } from '../../lib/prisma.js';
 import { assertOrganisationRole } from '../organisations/organisations.service.js';
-import { acceptInvitationTransaction, createInvitation, findInvitationByTokenHash, revokeInvitation } from './invitations.db.js';
+import { acceptInvitationTransaction, createInvitation, findInvitationByTokenHash, listPendingInvitations, revokeInvitation } from './invitations.db.js';
 
 export const inviteMember = async (input: {
   organisationId: string; actorId: string; email: string; role: 'ADMIN' | 'STAFF';
@@ -91,4 +91,9 @@ export const revokeOrganisationInvitation = async (input: {
   await assertOrganisationRole(input.organisationId, input.actorId, ['OWNER', 'ADMIN']);
   const result = await revokeInvitation(input);
   if (result.count !== 1) throw new AppError('INVITATION_NOT_FOUND', 404, 'Pending invitation was not found');
+};
+
+export const getPendingInvitations = async (organisationId: string, actorId: string) => {
+  await assertOrganisationRole(organisationId, actorId, ['OWNER', 'ADMIN']);
+  return listPendingInvitations(organisationId);
 };

@@ -1,4 +1,4 @@
-import { prisma } from '../../lib/prisma.js';
+import { Prisma } from '@prisma/client';\nimport { prisma } from '../../lib/prisma.js';
 
 export const writeAuditEvent = (input: {
   organisationId: string; actorId?: string; action: string; resourceType: string;
@@ -10,6 +10,6 @@ export const writeAuditEvent = (input: {
     action: input.action,
     resourceType: input.resourceType,
     ...(input.resourceId ? { resourceId: input.resourceId } : {}),
-    ...(input.metadata ? { metadata: input.metadata } : {}),
+    ...(input.metadata ? { metadata: input.metadata as Prisma.InputJsonObject } : {}),
   },
 });

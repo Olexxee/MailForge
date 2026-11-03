@@ -38,3 +38,8 @@ GO54's published Outlook setup guide documents the generic host `mail.yoursite.c
 ## Phase 3 read implementation
 
 The GO54 adapter now exposes folders, bounded message pages, and message detail over IMAP. Pagination uses UIDs and includes UIDVALIDITY in its opaque cursor; a changed UIDVALIDITY forces a refresh rather than silently serving a different message. The adapter limits each body-part download to 256 KiB, returns attachment metadata only, and does not fetch or persist complete RFC822 source. API message HTML is sanitised with an allow-list before it reaches the browser. No IMAP write operation, SMTP send, attachment download, or sync job is introduced in this increment.
+
+
+## Phase 3 attachments and flags
+
+GO54 attachment retrieval validates the message identifier against the selected folder's current UIDVALIDITY, verifies that the MIME part is classified as an attachment, and streams at most 10 MiB. The IMAP connection and folder lock remain open only while the stream is consumed and are released even if the client disconnects. Responses are forced to `application/octet-stream` with a sanitised download filename and `nosniff`; message HTML never embeds attachments. Read/unread changes use the IMAP `\\Seen` flag and require a MANAGE or ADMINISTER mailbox grant at the API layer. Opening a message remains read-only.

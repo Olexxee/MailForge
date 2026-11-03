@@ -16,7 +16,7 @@ export const hashPassword = async (password: string): Promise<string> => {
 
 export const verifyPassword = async (password: string, encoded: string): Promise<boolean> => {
   const [algorithm, n, r, p, saltValue, hashValue] = encoded.split('$');
-  if (algorithm !== 'scrypt' || !n || !r || !p || !saltValue || !hashValue) return false;
+  if (algorithm !== 'scrypt' || n !== String(1 << 15) || r !== '8' || p !== '1' || !saltValue || !hashValue) return false;
   const salt = Buffer.from(saltValue, 'base64url');
   const expected = Buffer.from(hashValue, 'base64url');
   if (salt.length !== 16 || expected.length !== KEY_LENGTH) return false;

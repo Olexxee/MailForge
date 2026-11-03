@@ -174,14 +174,46 @@ export const revokeMailboxGrant = (input: {
   return result.count;
 });
 
-export const countActiveMailboxAdministrators = (organisationId: string, mailboxId: string, excludingUserId: string) =>
-  prisma.mailboxAccess.count({
-    where: {
-      organisationId,
-      mailboxId,
-      userId: { not: excludingUserId },
-      permission: 'ADMINISTER',
-      revokedAt: null,
-      user: { isActive: true, memberships: { some: { organisationId, isActive: true } } },
-    },
+export const revokeMailboxGrant = (input: {
+  organisationId: string;
+  mailboxId: string;
+  userId: string;
+  actorId: string;
+}) => prisma.$transaction(async (tx) => {
+  const grant = await tx.mailboxAccess.findUnique({
+    where: { mailboxId_userId: { mailboxId: input.mailboxId, userId: input.userId } },
   });
+  if (!grant || grant.organisationId !== input.organisationId || grant.revokedAt) return 0;
+
+  if (grant.permission === 'ADMINISTER') {
+    const remainingAdministrators = await tx.mailboxAccess.count({
+      where: {
+        organisationId: input.organisationId,
+        mailboxId: input.mailboxId,
+        userId: { not: input.userId },
+        permission: 'ADMINISTER',
+        revokedAt: null,
+        user: { isActive: true, memberships: { some: { organisationId: input.organisationId, isActive: true } } },
+      },
+    });
+    if (remainingAdministrators === 0) return -1;
+  }
+
+  const result = await tx.mailboxAccess.updateMany({
+    where: { organisationId: input.organisationId, mailboxId: input.mailboxId, userId: input.userId, revokedAt: null },
+    data: { revokedAt: new Date() },
+  });
+  if (result.count === 1) {
+    await tx.auditLog.create({
+      data: {
+        organisationId: input.organisationId,
+        actorId: input.actorId,
+        action: 'MAILBOX_ACCESS_REVOKED',
+        resourceType: 'MailboxAccess',
+        resourceId: grant.id,
+        metadata: { mailboxId: input.mailboxId, targetUserId: input.userId },
+      },
+    });
+  }
+  return result.count;
+}, { isolationLevel: 'Serializable' });

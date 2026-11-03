@@ -93,7 +93,7 @@ describe('Phase 2 domains, GO54 connections, and mailbox access', () => {
     const connection = await prisma.providerConnection.findUnique({ where: { id: connectionId } });
     expect(connection).not.toBeNull();
     expect(connection!.encryptedCredentials).not.toContain('provider-secret-that-must-not-be-stored-plaintext');
-    expect(JSON.parse(decryptCredential(connection!.encryptedCredentials, connection!.credentialKeyVersion)))
+    expect(JSON.parse(decryptCredential(connection!.encryptedCredentials, connection!.credentialKeyVersion, `${organisationId}:${connection!.accountEmail}`)))
       .toEqual({ password: 'provider-secret-that-must-not-be-stored-plaintext' });
     await expect(assertMailboxPermission(organisationId, mailboxId, ownerId, 'ADMINISTER')).resolves.toBeTruthy();
   });

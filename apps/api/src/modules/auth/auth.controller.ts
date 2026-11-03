@@ -7,7 +7,7 @@ const CSRF_COOKIE = 'mf_csrf';
 const cookieOptions = (maxAge?: number) => [
   'Path=/api/v1',
   'HttpOnly',
-  'SameSite=None',
+  process.env.NODE_ENV === 'production' ? 'SameSite=None' : 'SameSite=Lax',
   ...(process.env.NODE_ENV === 'production' ? ['Secure'] : []),
   ...(maxAge === undefined ? [] : [`Max-Age=${Math.floor(maxAge / 1000)}`]),
 ].join('; ');
@@ -27,7 +27,7 @@ export const readCookie = (header: string | undefined, name: string): string | u
 export const setSessionCookies = (res: Response, sessionToken: string, csrfToken: string, expiresAt: Date) => {
   const maxAge = expiresAt.getTime() - Date.now();
   res.append('Set-Cookie', `${SESSION_COOKIE}=${encodeURIComponent(sessionToken)}; ${cookieOptions(maxAge)}`);
-  res.append('Set-Cookie', `${CSRF_COOKIE}=${encodeURIComponent(csrfToken)}; Path=/api/v1; SameSite=None; ${process.env.NODE_ENV === 'production' ? 'Secure; ' : ''}Max-Age=${Math.floor(maxAge / 1000)}`);
+  res.append('Set-Cookie', `${CSRF_COOKIE}=${encodeURIComponent(csrfToken)}; Path=/api/v1; ${process.env.NODE_ENV === 'production' ? 'SameSite=None; Secure; ' : 'SameSite=Lax; '}Max-Age=${Math.floor(maxAge / 1000)}`);
 };
 
 export const clearSessionCookies = (res: Response) => {

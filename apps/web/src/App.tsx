@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react';
+import { Phase2Workspace } from './Phase2Workspace.js';
 import {
   ApiError,
   apiRequest,

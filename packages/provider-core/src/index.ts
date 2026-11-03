@@ -58,6 +58,13 @@ export interface ProviderMessageDetail extends ProviderMessageSummary {
   attachments: ProviderAttachmentSummary[];
 }
 
+export interface ProviderAttachmentDownload {
+  filename: string;
+  contentType: string;
+  size: number;
+  stream: AsyncIterable<Uint8Array>;
+}
+
 export interface MailProvider {
   readonly providerId: string;
   capabilities(): ReadonlySet<ProviderCapability>;
@@ -68,6 +75,13 @@ export interface MailProvider {
     options: { limit: number; cursor?: string },
   ): Promise<ProviderMessagePage>;
   getMessage(folderId: string, messageId: string): Promise<ProviderMessageDetail | null>;
+  downloadAttachment(
+    folderId: string,
+    messageId: string,
+    partId: string,
+    maxBytes: number,
+  ): Promise<ProviderAttachmentDownload | null>;
+  setMessageSeen(folderId: string, messageId: string, seen: boolean): Promise<void>;
 }
 
 export class ProviderCapabilityError extends Error {

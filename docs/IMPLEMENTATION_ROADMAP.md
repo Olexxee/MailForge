@@ -72,8 +72,9 @@ Keep all five files together inside each feature directory. Do not create global
 - [x] Add mailbox-scoped API routes with explicit READ-grant enforcement and no-store responses.
 - [x] Sanitise HTML server-side using a strict allow-list; do not render remote images or active content.
 - [x] Bound each text/html body-part fetch to 256 KiB; return attachment metadata only.
-- [ ] Build and verify the inbox UI against the read endpoints.
-- [ ] Add provider adapter tests for folder/message pagination, UIDVALIDITY changes, body bounds, and safe failure mapping.
+- [x] Build the responsive inbox UI against the read endpoints.
+- [x] Add fake-provider pagination contract tests and server-side HTML sanitisation tests.
+- [ ] Add GO54 adapter tests for UID pagination, UIDVALIDITY changes, body bounds, and safe failure mapping.
 - [ ] Implement authorised, bounded attachment streaming as a separately tested increment.
 - [ ] Add read/unread mutation only after permission and provider semantics are defined.
 - [ ] Add sync checkpoints only where required; preserve UIDVALIDITY correctness.

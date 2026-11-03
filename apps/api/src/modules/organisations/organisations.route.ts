@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { asyncWrapper, validateBody } from '../../app.js';
+import { asyncWrapper, validateBody } from '../../lib/http.js';
 import { requireAuth, requireCsrf } from '../auth/auth.middleware.js';
 import { listMyOrganisations, listOrganisationMembers, updateOrganisationMember } from './organisations.controller.js';
 import { updateMembershipSchema } from './organisations.validator.js';

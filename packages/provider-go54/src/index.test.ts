@@ -1,5 +1,15 @@
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { Go54Provider } from './index.js';
+
+const endpointEnv = ['GO54_IMAP_HOST', 'GO54_IMAP_PORT', 'GO54_SMTP_HOST', 'GO54_SMTP_PORT'] as const;
+const previousEndpointEnv = Object.fromEntries(endpointEnv.map((key) => [key, process.env[key]]));
+afterEach(() => {
+  for (const key of endpointEnv) {
+    const value = previousEndpointEnv[key];
+    if (value === undefined) delete process.env[key];
+    else process.env[key] = value;
+  }
+});
 
 describe('Go54Provider health checks', () => {
   it('reports IMAP and SMTP independently', async () => {
@@ -36,5 +46,17 @@ describe('Go54Provider health checks', () => {
     expect(health.imapErrorCode).toBe('PROVIDER_CONNECTION_FAILED');
     expect(health.smtpErrorCode).toBe('PROVIDER_CONNECTION_FAILED');
     expect(JSON.stringify(health)).not.toContain('secret diagnostic');
+  });
+});
+
+describe('GO54 endpoint configuration', () => {
+  it('reports missing IMAP and SMTP endpoints independently without network access', async () => {
+    for (const key of endpointEnv) delete process.env[key];
+    const provider = new Go54Provider({ email: 'mail@example.com', password: 'not-a-real-password' });
+    const health = await provider.checkHealth();
+    expect(health.imap).toBe('unavailable');
+    expect(health.smtp).toBe('unavailable');
+    expect(health.imapErrorCode).toBe('GO54_IMAP_HOST_NOT_CONFIGURED');
+    expect(health.smtpErrorCode).toBe('GO54_SMTP_HOST_NOT_CONFIGURED');
   });
 });

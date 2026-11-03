@@ -7,14 +7,13 @@ import { acceptInvitationTransaction, createInvitation, findInvitationByTokenHas
 export const inviteMember = async (input: {
   organisationId: string; actorId: string; email: string; role: 'ADMIN' | 'STAFF';
 }) => {
-  await assertOrganisationRole(input.organisationId, input.actorId, ['OWNER', 'ADMIN']);
-  const existing = await prisma.user.findUnique({ where: { email: input.email } });
-  if (existing) {
-    const membership = await prisma.organizationMembership.findUnique({
-      where: { organisationId_userId: { organisationId: input.organisationId, userId: existing.id } },
-    });
-    if (membership?.isActive) throw new AppError('ALREADY_A_MEMBER', 409, 'This user is already a member');
+  const actor = await assertOrganisationRole(input.organisationId, input.actorId, ['OWNER', 'ADMIN']);
+  if (actor.role === 'ADMIN' && input.role !== 'STAFF') {
+    throw new AppError('ACCESS_DENIED', 403, 'Administrators may invite staff members only');
   }
+  const existing = await prisma.user.findUnique({ where: { email: input.email } });
+  if (existing) throw new AppError('ACCOUNT_EXISTS', 409, 'This email already has a MailForge account; existing-account invitations are not enabled yet');
+
   const token = createOpaqueToken(32);
   const invitation = await createInvitation({
     organisationId: input.organisationId,
@@ -34,7 +33,7 @@ export const inviteMember = async (input: {
       metadata: { email: input.email, role: input.role },
     },
   });
-  // Token is returned once for the organisation owner to distribute securely.
+  // Return the raw token once; only its SHA-256 digest is persisted.
   return { id: invitation.id, email: invitation.email, role: invitation.role, expiresAt: invitation.expiresAt, token };
 };
 
@@ -53,7 +52,9 @@ export const acceptInvitation = async (input: {
     passwordHash,
   });
   if (!result) throw new AppError('INVITATION_INVALID', 400, 'Invitation is invalid or has expired');
-  if (result.existingUser) throw new AppError('ACCOUNT_EXISTS', 409, 'An account already exists for this email; sign in and ask an organisation admin to grant access');
+  if (result.existingUser) {
+    throw new AppError('ACCOUNT_EXISTS', 409, 'An account already exists for this email; sign in and ask an organisation admin to grant access');
+  }
   return { userId: result.user.id, email: result.user.email, displayName: result.user.displayName };
 };
 

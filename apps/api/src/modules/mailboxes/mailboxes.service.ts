@@ -1,3 +1,4 @@
+import { domainToASCII } from 'node:url';
 import { AppError } from '../../lib/http.js';
 import { encryptCredential } from '../../lib/credential-encryption.js';
 import {
@@ -39,10 +40,10 @@ export const connectGo54Mailbox = async (input: {
   const email = input.email.trim().toLowerCase();
   const separator = email.lastIndexOf('@');
   if (separator < 1) throw new AppError('MAILBOX_EMAIL_INVALID', 400, 'Enter a valid mailbox email address');
-  const emailDomain = email.slice(separator + 1);
+  const emailDomain = domainToASCII(email.slice(separator + 1));
   const domain = await findVerifiedDomain(input.organisationId, input.domainId);
   if (!domain) throw new AppError('DOMAIN_NOT_VERIFIED', 409, 'Verify the organisation domain before connecting a mailbox');
-  if (emailDomain !== domain.name) {
+  if (!emailDomain || emailDomain !== domain.name) {
     throw new AppError('MAILBOX_DOMAIN_MISMATCH', 400, 'The mailbox email must use the selected verified domain');
   }
   if (await findMailboxByEmail(input.organisationId, email)) {

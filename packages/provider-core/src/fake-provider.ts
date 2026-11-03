@@ -2,7 +2,6 @@ import type {
   MailProvider,
   ProviderHealth,
   ProviderMessageDetail,
-  ProviderMessageSummary,
 } from './index.js';
 
 export class FakeMailProvider implements MailProvider {

@@ -357,9 +357,9 @@ export default function App() {
           {!currentOrganisation ? (
             <section className="empty-state"><div className="empty-icon">⌂</div><h2>No organisation access</h2><p>Your account is not an active member of an organisation. Ask an owner to invite you.</p></section>
           ) : page === 'domains' ? (
-            <Phase2Workspace organisationId={organisationId} canManage={Boolean(canManage)} section="domains" />
+            <Phase2Workspace organisationId={organisationId} canManage={Boolean(canManage)} members={members} section="domains" />
           ) : page === 'mailboxes' ? (
-            <Phase2Workspace organisationId={organisationId} canManage={Boolean(canManage)} section="mailboxes" />
+            <Phase2Workspace organisationId={organisationId} canManage={Boolean(canManage)} members={members} section="mailboxes" />
           ) : page === 'members' ? (
             <>
               <div className="page-heading">

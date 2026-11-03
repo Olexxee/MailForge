@@ -105,6 +105,7 @@ const createImapClient = (credentials: Go54Credentials) => {
     secure: config.port === 993,
     ...(config.port === 143 ? { doSTARTTLS: true } : {}),
     auth: { user: credentials.email, pass: credentials.password },
+    tls: { minVersion: 'TLSv1.2', rejectUnauthorized: true },
     logger: false,
     connectionTimeout: 10_000,
     socketTimeout: 20_000,

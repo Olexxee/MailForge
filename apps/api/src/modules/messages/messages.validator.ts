@@ -19,7 +19,7 @@ export const messagesQuerySchema = z.object({
 }).strict();
 
 export const attachmentParamsSchema = messageDetailParamsSchema.extend({
-  partId: z.string().regex(/^[0-9]+(?:\\.[0-9]+)*$/).max(64),
+  partId: z.string().regex(/^[0-9]+(?:\.[0-9]+)*$/).max(64),
 });
 
 export const messageReadStateBodySchema = z.object({

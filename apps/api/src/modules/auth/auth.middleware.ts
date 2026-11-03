@@ -30,7 +30,7 @@ export const requireAuth: RequestHandler = async (req, res, next) => {
       email: session.user.email,
       sessionId: session.id,
       csrfTokenHash: session.csrfTokenHash,
-      absoluteExpiresAt: session.absoluteExpiresAt,
+      absoluteExpiresAt: session.absoluteExpiresAt,\n      expiresAt: session.expiresAt,
     };
     next();
   } catch (error) {

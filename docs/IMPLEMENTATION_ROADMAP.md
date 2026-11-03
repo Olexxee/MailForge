@@ -42,13 +42,15 @@ Keep all five files together inside each feature directory. Do not create global
 
 ## Phase 1 — Authentication and organisation access
 
-- Owner bootstrap without public registration.
-- Login, logout, secure cookie sessions, rotation/revocation, and current-user endpoint.
-- Organisation, membership, role policy, and invitations.
-- Hashed, expiring, single-use invitation tokens.
-- Audit events and minimum administration screens.
+- One-time owner bootstrap through a CLI command, protected by a PostgreSQL transaction advisory lock; no public owner-registration endpoint.
+- Login, logout, current-user endpoint, CSRF-protected cookie sessions, atomic session rotation, revocation, seven-day idle expiry, and 30-day absolute expiry.
+- Organisation membership listing and controlled role/deactivation operations. Owner membership cannot be modified through the staff-management endpoint.
+- Staff/admin invitations with hashed, expiring, single-use tokens, revocation, and acceptance for new and existing accounts.
+- Until transactional email delivery is integrated, invitation tokens are returned once to an authorised administrator for secure manual distribution.
+- Audit events for owner bootstrap, invitations, invitation acceptance/revocation, and membership changes.
+- No public signup; new accounts can only be created by accepting a valid invitation.
 
-**Exit criteria:** owner invites staff; staff accept and sign in; revoked/expired sessions and invitations are rejected; organisation isolation and role checks pass; no public signup.
+**Exit criteria:** bootstrap is one-time and concurrency-safe; owner invites staff; invited new and existing users can accept; revoked/expired/replayed invitations fail; login/logout/refresh and session revocation work; CSRF and origin checks reject forged requests; organisation isolation and role-escalation tests pass; no public signup.
 
 ## Phase 2 — Domains, provider connections, and mailboxes
 

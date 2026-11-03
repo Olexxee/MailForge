@@ -21,12 +21,14 @@ const organisationIds: string[] = [];
 let ownerId = '';
 let adminId = '';
 let staffId = '';
+let outsiderId = '';
 let organisationId = '';
 let secondOrganisationId = '';
 
 describe('Phase 1 authentication and organisation workflows', () => {
   beforeAll(async () => {
-    const [ownerPasswordHash, adminPasswordHash, staffPasswordHash] = await Promise.all([
+    const [ownerPasswordHash, adminPasswordHash, staffPasswordHash, outsiderPasswordHash] = await Promise.all([
+      hashPassword('integration-test-password-123'),
       hashPassword('integration-test-password-123'),
       hashPassword('integration-test-password-123'),
       hashPassword('integration-test-password-123'),
@@ -40,10 +42,14 @@ describe('Phase 1 authentication and organisation workflows', () => {
     const staff = await prisma.user.create({
       data: { email: staffEmail, displayName: 'Test Staff', passwordHash: staffPasswordHash },
     });
-    userIds.push(owner.id, admin.id, staff.id);
+    const outsider = await prisma.user.create({
+      data: { email: `outsider-${suffix}@mailforge.test`, displayName: 'Test Outsider', passwordHash: outsiderPasswordHash },
+    });
+    userIds.push(owner.id, admin.id, staff.id, outsider.id);
     ownerId = owner.id;
     adminId = admin.id;
     staffId = staff.id;
+    outsiderId = outsider.id;
 
     const organisation = await prisma.organisation.create({
       data: { name: 'MailForge Integration Test', slug: `test-${suffix}` },
@@ -153,7 +159,7 @@ describe('Phase 1 authentication and organisation workflows', () => {
     });
     const listed = await getPendingInvitations(organisationId, adminId);
     expect(listed.some((item) => item.id === invitation.id)).toBe(true);
-    await expect(getPendingInvitations(organisationId, staffId))
+    await expect(getPendingInvitations(organisationId, outsiderId))
       .rejects.toMatchObject({ code: 'ACCESS_DENIED', statusCode: 403 });
   });
 

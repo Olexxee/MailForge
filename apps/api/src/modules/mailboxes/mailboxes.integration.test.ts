@@ -98,6 +98,37 @@ describe('Phase 2 domains, GO54 connections, and mailbox access', () => {
     await expect(assertMailboxPermission(organisationId, mailboxId, ownerId, 'ADMINISTER')).resolves.toBeTruthy();
   });
 
+  it('enforces same-organisation foreign keys for mailbox domains and access grants', async () => {
+    const foreignDomain = await prisma.domain.create({
+      data: {
+        organisationId: otherOrganisationId,
+        name: `foreign-${suffix}.test`,
+        verificationToken: 'foreign-public-challenge',
+        status: 'VERIFIED',
+        verifiedAt: new Date(),
+        createdById: outsiderId,
+      },
+    });
+    await expect(prisma.mailbox.create({
+      data: {
+        organisationId,
+        domainId: foreignDomain.id,
+        providerConnectionId: connectionId,
+        email: `foreign@${foreignDomain.name}`,
+      },
+    })).rejects.toMatchObject({ code: 'P2003' });
+
+    await expect(prisma.mailboxAccess.create({
+      data: {
+        organisationId,
+        mailboxId,
+        userId: outsiderId,
+        permission: 'READ',
+        grantedById: ownerId,
+      },
+    })).rejects.toMatchObject({ code: 'P2003' });
+  });
+
   it('denies organisation members without a mailbox grant and prevents cross-organisation access', async () => {
     await expect(assertMailboxPermission(organisationId, mailboxId, staffId, 'READ'))
       .rejects.toMatchObject({ code: 'MAILBOX_ACCESS_DENIED', statusCode: 403 });

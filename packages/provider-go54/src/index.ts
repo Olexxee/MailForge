@@ -174,7 +174,7 @@ const decodeCursor = (value: string): PageCursor => {
   }
 };
 
-const addressList = (addresses: ImapAddress[] | undefined): string[] =>
+\nconst encodeMessageId = (identifier: MessageIdentifier): string =>\n  Buffer.from(JSON.stringify(identifier), 'utf8').toString('base64url');\n\nconst decodeMessageId = (value: string): MessageIdentifier => {\n  try {\n    const parsed: unknown = JSON.parse(Buffer.from(value, 'base64url').toString('utf8'));\n    if (!parsed || typeof parsed !== 'object' ||\n      !('uidValidity' in parsed) || typeof parsed.uidValidity !== 'string' ||\n      !('uid' in parsed) || typeof parsed.uid !== 'number' ||\n      !Number.isSafeInteger(parsed.uid) || parsed.uid < 1) throw new Error('invalid message id');\n    return { uidValidity: parsed.uidValidity, uid: parsed.uid };\n  } catch {\n    throw codedError('MAIL_MESSAGE_IDENTIFIER_INVALID');\n  }\n};\n\nconst addressList = (addresses: ImapAddress[] | undefined): string[] =>
   (addresses ?? [])
     .map((item) => item.address?.trim() || item.name?.trim() || '')
     .filter(Boolean)
@@ -339,7 +339,7 @@ export class Go54Provider implements MailProvider {
           ? await client.fetchAll(pageUids, { envelope: true, flags: true, internalDate: true, size: true }, { uid: true })
           : [];
         const messages = fetched
-          .map((message) => toSummary(message, folderId))
+          .map((message) => toSummary(message, folderId, uidValidity))
           .sort((a, b) => b.id.localeCompare(a.id, undefined, { numeric: true }));
         const nextBeforeUid = uids.length > limit
           ? (pageUids[pageUids.length - 1] ?? 1) - 1

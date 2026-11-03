@@ -130,12 +130,20 @@ export const revokeMailboxAccess = async (input: {
   await assertMailboxPermission(input.organisationId, input.mailboxId, input.actorId, 'ADMINISTER');
   const grant = await findMailboxGrant(input.organisationId, input.mailboxId, input.userId);
   if (!grant || grant.revokedAt) throw new AppError('MAILBOX_GRANT_NOT_FOUND', 404, 'Mailbox access grant was not found');
-  const result = await revokeMailboxGrant({
-    organisationId: input.organisationId,
-    mailboxId: input.mailboxId,
-    userId: input.userId,
-    actorId: input.actorId,
-  });
+  let result: number;
+  try {
+    result = await revokeMailboxGrant({
+      organisationId: input.organisationId,
+      mailboxId: input.mailboxId,
+      userId: input.userId,
+      actorId: input.actorId,
+    });
+  } catch (error) {
+    if (error && typeof error === 'object' && 'code' in error && error.code === 'P2034') {
+      throw new AppError('ACCESS_UPDATE_CONFLICT', 409, 'Mailbox access changed concurrently. Reload and retry');
+    }
+    throw error;
+  }
   if (result === -1) {
     throw new AppError('LAST_MAILBOX_ADMIN', 409, 'Grant ADMINISTER access to another active member before revoking the last administrator');
   }

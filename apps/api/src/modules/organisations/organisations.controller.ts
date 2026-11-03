@@ -17,7 +17,7 @@ export const updateOrganisationMember = async (req: Request, res: Response) => {
   const auth = res.locals.auth as { userId: string };
   const body = req.body as { role?: 'ADMIN' | 'STAFF'; isActive?: boolean };
   const membership = await changeOrganisationMembership({
-    organisationId: req.params.organisationId!,
+    organisationId: req.params.organisationId as string,
     actorId: auth.userId,
     targetUserId: req.params.userId as string,
     ...body,

@@ -71,8 +71,8 @@ export const logout = async (_req: Request, res: Response) => {
 };
 
 export const refresh = async (_req: Request, res: Response) => {
-  const auth = res.locals.auth as { sessionId: string; userId: string };
-  const session = await rotateUserSession(auth.sessionId, auth.userId);
+  const auth = res.locals.auth as { sessionId: string; userId: string; absoluteExpiresAt: Date };
+  const session = await rotateUserSession(auth.sessionId, auth.userId, auth.absoluteExpiresAt);
   setSessionCookies(res, session.sessionToken, session.csrfToken, session.expiresAt);
   const user = await getCurrentUser(auth.userId);
   res.json({ success: true, data: { user: userPayload(user), csrfToken: session.csrfToken }, requestId: res.locals.requestId });

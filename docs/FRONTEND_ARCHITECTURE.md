@@ -12,3 +12,6 @@ Show only authorised mailboxes. Provider capability flags determine available co
 
 ## State/security
 Central API client and error handling. Never store provider credentials in frontend/browser storage. Avoid localStorage for message bodies/attachments. Invalidate mailbox caches on logout/revocation. Treat 403 as forbidden, not empty inbox.
+## Phase 1 admin workspace implementation
+
+The initial admin workspace provides login, invite acceptance, organisation selection, member listing, role/activation controls, pending invitation listing, invitation creation, and invitation revocation. The browser keeps the CSRF token in memory for the active page and obtains a fresh token from authenticated `GET /auth/csrf` on startup. The session credential remains in the HttpOnly API cookie; do not put it in localStorage or sessionStorage.

@@ -1,6 +1,6 @@
 import { AppError } from '../../lib/http.js';
 import { createOpaqueToken, hashToken, verifyPassword } from '../../lib/crypto.js';
-import { createSession, findActiveSession, findUserByEmail, findUserById, revokeSession, rotateSession } from './auth.db.js';
+import { createSession, extendSessionExpiry, findActiveSession, findUserByEmail, findUserById, revokeSession, rotateSession, updateSessionCsrfHash } from './auth.db.js';
 
 const SESSION_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 const ABSOLUTE_SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000;
@@ -34,7 +34,21 @@ export const issueSession = async (userId: string) => {
   return { sessionToken, csrfToken, expiresAt, absoluteExpiresAt };
 };
 
-export const getSession = (token: string) => findActiveSession(hashToken(token));
+export const getSession = async (token: string) => {
+  const session = await findActiveSession(hashToken(token));
+  if (!session) return null;
+  const now = new Date();
+  const remainingMs = session.expiresAt.getTime() - now.getTime();
+  if (remainingMs <= 24 * 60 * 60 * 1000) {
+    const expiresAt = new Date(Math.min(now.getTime() + SESSION_TTL_MS, session.absoluteExpiresAt.getTime()));
+    if (expiresAt > session.expiresAt) {
+      const updated = await extendSessionExpiry(session.id, expiresAt, now);
+      if (updated.count !== 1) return null;
+      return { ...session, expiresAt };
+    }
+  }
+  return session;
+};
 
 export const rotateUserSession = async (sessionId: string, userId: string, absoluteExpiresAt: Date) => {
   if (absoluteExpiresAt <= new Date()) {
@@ -61,4 +75,11 @@ export const getCurrentUser = async (userId: string) => {
   const user = await findUserById(userId);
   if (!user || !user.isActive) throw new AppError('UNAUTHENTICATED', 401, 'Authentication required');
   return user;
+};
+
+export const renewCsrfToken = async (sessionId: string) => {
+  const token = createOpaqueToken(24);
+  const updated = await updateSessionCsrfHash(sessionId, hashToken(token));
+  if (updated.count !== 1) throw new AppError('SESSION_EXPIRED', 401, 'Session is no longer valid');
+  return token;
 };

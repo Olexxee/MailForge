@@ -6,6 +6,7 @@ import {
   acceptExistingOrganisationInvitation,
   acceptOrganisationInvitation,
   createOrganisationInvitation,
+  listOrganisationInvitations,
   revokeOrganisationInvitation,
 } from './invitations.controller.js';
 import { acceptInvitationSchema, createInvitationSchema } from './invitations.validator.js';
@@ -28,6 +29,11 @@ invitationsRouter.post(
   createRateLimiter(5),
   validateBody(acceptInvitationSchema),
   asyncWrapper(acceptOrganisationInvitation),
+);
+invitationsRouter.get(
+  '/organisations/:organisationId/invitations',
+  requireAuth,
+  asyncWrapper(listOrganisationInvitations),
 );
 invitationsRouter.post(
   '/organisations/:organisationId/invitations',

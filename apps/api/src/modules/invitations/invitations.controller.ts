@@ -1,7 +1,7 @@
 import type { Request, Response } from 'express';
 import { issueSession } from '../auth/auth.service.js';
-import { setSessionCookies } from '../auth/auth.controller.js';
-import { acceptInvitation, acceptInvitationForExistingUser, inviteMember, revokeOrganisationInvitation as revokeInvitation } from './invitations.service.js';
+import { setSessionCookies } from '../auth/auth.cookies.js';
+import { acceptInvitation, acceptInvitationForExistingUser, getPendingInvitations, inviteMember, revokeOrganisationInvitation as revokeInvitation } from './invitations.service.js';
 
 export const createOrganisationInvitation = async (req: Request, res: Response) => {
   const auth = res.locals.auth as { userId: string };
@@ -55,4 +55,10 @@ export const acceptExistingOrganisationInvitation = async (req: Request, res: Re
   const body = req.body as { token: string };
   await acceptInvitationForExistingUser({ token: body.token, userId: auth.userId, email: auth.email });
   res.json({ success: true, data: { accepted: true }, requestId: res.locals.requestId });
+};
+
+export const listOrganisationInvitations = async (req: Request, res: Response) => {
+  const auth = res.locals.auth as { userId: string };
+  const invitations = await getPendingInvitations(req.params.organisationId as string, auth.userId);
+  res.json({ success: true, data: { invitations }, requestId: res.locals.requestId });
 };

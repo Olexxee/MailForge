@@ -79,3 +79,22 @@ export const acceptInvitationTransaction = async (input: {
   });
   return { existingUser: false as const, user, membership };
 });
+
+export const listPendingInvitations = (organisationId: string) =>
+  prisma.organizationInvitation.findMany({
+    where: {
+      organisationId,
+      acceptedAt: null,
+      revokedAt: null,
+      expiresAt: { gt: new Date() },
+    },
+    select: {
+      id: true,
+      email: true,
+      role: true,
+      expiresAt: true,
+      createdAt: true,
+      inviter: { select: { displayName: true } },
+    },
+    orderBy: { createdAt: 'desc' },
+  });

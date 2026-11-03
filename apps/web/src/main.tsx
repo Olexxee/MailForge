@@ -1,2 +1,10 @@
-import {StrictMode} from 'react';
-import {createRoot} from 'react-dom/client';import './style.css';function App(){return <main><h1>MailForge</h1><p>Private organisation email, in one workspace.</p><span>Engineering foundation</span></main>}createRoot(document.getElementById('root')!).render(<StrictMode><App/></StrictMode>);
+import { StrictMode } from 'react';
+import { createRoot } from 'react-dom/client';
+import App from './App.js';
+import './style.css';
+
+createRoot(document.getElementById('root')!).render(
+  <StrictMode>
+    <App />
+  </StrictMode>,
+);

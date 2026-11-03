@@ -2,9 +2,34 @@
 
 Private, multi-domain email management for an organisation.
 
-**Current status:** Phase 0 foundation and CI verification are merged. Phase 1 authentication and organisation access are being implemented on `feat/phase-1-auth-organisation`; this phase is not complete until its migration, tests, and security checks pass in CI. Dependency lockfile and npm audit findings remain Phase 0 hardening items.
+**Current status:** Phase 0 foundation and CI verification are merged. Phase 1 backend authentication and organisation access are merged. The admin workspace UI is being implemented on `feat/phase-1-admin-workspace`; Phase 1 is not complete until the UI and full acceptance checks pass in CI. Dependency lockfile and npm audit findings remain Phase 0 hardening items.
 
 MailForge connects existing email providers and gives authorised staff one unified webmail and administration interface. It is not an email host and will not operate its own mail server.
+
+## Local development
+
+Requirements: Node.js 22, npm 10+, and PostgreSQL 16.
+
+1. Copy `.env.example` to the repository-root `.env` and set `DATABASE_URL`. The API and Vite workspaces load this root environment file.
+2. Install dependencies with `npm install`.
+3. Generate the Prisma client and apply migrations:
+   ```bash
+   npm run db:generate --workspace=@mailforge/database
+   npm run db:migrate:deploy --workspace=@mailforge/database
+   ```
+4. Start the API and web app in separate terminals:
+   ```bash
+   npm run dev
+   npm run dev:web
+   ```
+5. For the first owner only, temporarily set `BOOTSTRAP_OWNER_EMAIL`, `BOOTSTRAP_OWNER_PASSWORD`, `BOOTSTRAP_OWNER_NAME`, `BOOTSTRAP_ORGANISATION_NAME`, and `BOOTSTRAP_ORGANISATION_SLUG` in the root `.env`, then run:
+   ```bash
+   npm run bootstrap:owner
+   ```
+   Remove the bootstrap values immediately after successful execution. The command refuses to run after an active owner exists.
+6. Configure `VITE_API_URL` for the web app when the API is not at `http://localhost:4000/api/v1`. Configure the API's `WEB_ORIGIN` to the exact browser origin.
+
+Do not commit `.env` or use production credentials in local development.
 
 ## Product target
 

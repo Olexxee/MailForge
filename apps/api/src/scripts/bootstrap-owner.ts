@@ -1,4 +1,4 @@
-import 'dotenv/config';
+import '../lib/load-env.js';
 import { z } from 'zod';
 import { PrismaClient } from '@prisma/client';
 import { hashPassword } from '../lib/crypto.js';

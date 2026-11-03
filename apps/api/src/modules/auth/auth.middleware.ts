@@ -3,6 +3,7 @@ import { AppError } from '../../lib/http.js';
 import { hashToken, safeEqual } from '../../lib/crypto.js';
 import { getSession } from './auth.service.js';
 import { readCookie } from '../../lib/cookies.js';
+import { setCsrfCookie, setSessionCookie } from './auth.cookies.js';
 
 export const requireTrustedOrigin: RequestHandler = (req, _res, next) => {
   const origin = req.header('origin');
@@ -25,12 +26,18 @@ export const requireAuth: RequestHandler = async (req, res, next) => {
     if (!token) throw new AppError('UNAUTHENTICATED', 401, 'Authentication required');
     const session = await getSession(token);
     if (!session) throw new AppError('UNAUTHENTICATED', 401, 'Authentication required');
+    setSessionCookie(res, token, session.expiresAt);
+    const csrfCookie = readCookie(req.headers.cookie, 'mf_csrf');
+    if (csrfCookie && safeEqual(hashToken(csrfCookie), session.csrfTokenHash)) {
+      setCsrfCookie(res, csrfCookie, session.expiresAt);
+    }
     res.locals.auth = {
       userId: session.user.id,
       email: session.user.email,
       sessionId: session.id,
       csrfTokenHash: session.csrfTokenHash,
       absoluteExpiresAt: session.absoluteExpiresAt,
+      expiresAt: session.expiresAt,
     };
     next();
   } catch (error) {

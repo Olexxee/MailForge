@@ -2,10 +2,11 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { randomUUID } from 'node:crypto';
 import { prisma } from '../../lib/prisma.js';
 import { hashPassword, hashToken } from '../../lib/crypto.js';
-import { getSession, issueSession, revokeUserSession, rotateUserSession } from './auth.service.js';
+import { getSession, issueSession, renewCsrfToken, revokeUserSession, rotateUserSession } from './auth.service.js';
 import {
   acceptInvitation,
   acceptInvitationForExistingUser,
+  getPendingInvitations,
   inviteMember,
   revokeOrganisationInvitation,
 } from '../invitations/invitations.service.js';
@@ -20,12 +21,14 @@ const organisationIds: string[] = [];
 let ownerId = '';
 let adminId = '';
 let staffId = '';
+let outsiderId = '';
 let organisationId = '';
 let secondOrganisationId = '';
 
 describe('Phase 1 authentication and organisation workflows', () => {
   beforeAll(async () => {
-    const [ownerPasswordHash, adminPasswordHash, staffPasswordHash] = await Promise.all([
+    const [ownerPasswordHash, adminPasswordHash, staffPasswordHash, outsiderPasswordHash] = await Promise.all([
+      hashPassword('integration-test-password-123'),
       hashPassword('integration-test-password-123'),
       hashPassword('integration-test-password-123'),
       hashPassword('integration-test-password-123'),
@@ -39,10 +42,14 @@ describe('Phase 1 authentication and organisation workflows', () => {
     const staff = await prisma.user.create({
       data: { email: staffEmail, displayName: 'Test Staff', passwordHash: staffPasswordHash },
     });
-    userIds.push(owner.id, admin.id, staff.id);
+    const outsider = await prisma.user.create({
+      data: { email: `outsider-${suffix}@mailforge.test`, displayName: 'Test Outsider', passwordHash: outsiderPasswordHash },
+    });
+    userIds.push(owner.id, admin.id, staff.id, outsider.id);
     ownerId = owner.id;
     adminId = admin.id;
     staffId = staff.id;
+    outsiderId = outsider.id;
 
     const organisation = await prisma.organisation.create({
       data: { name: 'MailForge Integration Test', slug: `test-${suffix}` },
@@ -65,8 +72,12 @@ describe('Phase 1 authentication and organisation workflows', () => {
   });
 
   afterAll(async () => {
-    await prisma.organisation.deleteMany({ where: { id: { in: organisationIds } } });
-    await prisma.user.deleteMany({ where: { id: { in: userIds } } });
+    try {
+      await prisma.organisation.deleteMany({ where: { id: { in: organisationIds } } });
+      await prisma.user.deleteMany({ where: { id: { in: userIds } } });
+    } finally {
+      await prisma.$disconnect();
+    }
   });
 
   it('denies staff access and blocks cross-organisation membership reads', async () => {
@@ -91,6 +102,10 @@ describe('Phase 1 authentication and organisation workflows', () => {
       organisationId, actorId: ownerId, targetUserId: staffId, role: 'ADMIN',
     });
     expect(updated.role).toBe('ADMIN');
+    await changeOrganisationMembership({ organisationId, actorId: ownerId, targetUserId: staffId, isActive: false });
+    const listedInactive = await getOrganisationMembers(organisationId, ownerId);
+    expect(listedInactive.find((item) => item.userId === staffId)?.isActive).toBe(false);
+    await changeOrganisationMembership({ organisationId, actorId: ownerId, targetUserId: staffId, isActive: true });
 
     await expect(changeOrganisationMembership({
       organisationId, actorId: ownerId, targetUserId: ownerId, isActive: false,
@@ -138,6 +153,16 @@ describe('Phase 1 authentication and organisation workflows', () => {
     expect(membership?.role).toBe('ADMIN');
   });
 
+  it('lists pending invitations only for organisation administrators', async () => {
+    const invitation = await inviteMember({
+      organisationId, actorId: ownerId, email: `listed-${suffix}@mailforge.test`, role: 'STAFF',
+    });
+    const listed = await getPendingInvitations(organisationId, adminId);
+    expect(listed.some((item) => item.id === invitation.id)).toBe(true);
+    await expect(getPendingInvitations(organisationId, outsiderId))
+      .rejects.toMatchObject({ code: 'ACCESS_DENIED', statusCode: 403 });
+  });
+
   it('rejects expired invitations', async () => {
     const token = `expired-${suffix}-invitation-token-1234567890`;
     await prisma.organizationInvitation.create({
@@ -167,10 +192,24 @@ describe('Phase 1 authentication and organisation workflows', () => {
     })).rejects.toMatchObject({ code: 'INVITATION_INVALID' });
   });
 
+  it('extends idle session expiry without crossing the absolute lifetime', async () => {
+    const issued = await issueSession(ownerId);
+    const sessionHash = hashToken(issued.sessionToken);
+    const nearExpiry = new Date(Date.now() + 12 * 60 * 60 * 1000);
+    await prisma.session.update({ where: { tokenHash: sessionHash }, data: { expiresAt: nearExpiry } });
+    const active = await getSession(issued.sessionToken);
+    expect(active?.expiresAt.getTime()).toBeGreaterThan(nearExpiry.getTime());
+    expect(active?.expiresAt.getTime()).toBeLessThanOrEqual(issued.absoluteExpiresAt.getTime());
+    await revokeUserSession(active!.id);
+  });
+
   it('rotates sessions atomically and rejects revoked tokens', async () => {
     const initial = await issueSession(ownerId);
     const initialRecord = await getSession(initial.sessionToken);
     expect(initialRecord).not.toBeNull();
+    const csrfToken = await renewCsrfToken(initialRecord!.id);
+    const csrfUpdatedSession = await getSession(initial.sessionToken);
+    expect(csrfUpdatedSession?.csrfTokenHash).toBe(hashToken(csrfToken));
     const rotated = await rotateUserSession(initialRecord!.id, ownerId, initial.absoluteExpiresAt);
     expect(await getSession(initial.sessionToken)).toBeNull();
     const active = await getSession(rotated.sessionToken);

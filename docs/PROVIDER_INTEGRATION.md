@@ -20,3 +20,13 @@ Do not assume mailbox-password IMAP. Plan OAuth consent/scopes, refresh/revocati
 
 ## Resend separation
 Resend remains for transactional app email. It is not a replacement for GO54 human mailbox IMAP/SMTP. Do not alter Resend or DNS/SPF/DKIM/DMARC without approval.
+
+## Phase 2 GO54 adapter implementation
+
+The first adapter uses ImapFlow for IMAP and Nodemailer for SMTP. IMAP and SMTP are deliberately checked independently; one can succeed while the other fails.
+
+- IMAP: `imap.go54mail.com:993`, implicit TLS, certificate verification enabled, bounded connection/socket timeouts. The adapter authenticates and lists folders, then closes the connection.
+- SMTP: `smtp.go54mail.com:587`, STARTTLS required (no cleartext fallback), TLS certificate verification enabled, TLS 1.2 minimum, bounded timeouts. The adapter calls SMTP transport verification only; it never sends a message.
+- Provider hostnames and ports are fixed in the adapter rather than supplied by the browser. This prevents arbitrary-host connection/SSRF through provider configuration.
+- No message read/send/folder mutation capability is advertised yet. Those capabilities are added in later phases after contract and provider-specific tests.
+- GO54 account-level IMAP/SMTP access remains unconfirmed until the user explicitly authorises testing against a real mailbox. Network validation is not part of CI.

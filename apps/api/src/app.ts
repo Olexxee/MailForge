@@ -3,7 +3,7 @@ import cors from 'cors';
 import express, { type ErrorRequestHandler, type RequestHandler } from 'express';
 import helmet from 'helmet';
 import pino from 'pino';
-import pinoHttp from 'pino-http';
+import { pinoHttp } from 'pino-http';
 import { randomUUID } from 'node:crypto';
 import { ZodError, z } from 'zod';
 import { rateLimit } from 'express-rate-limit';

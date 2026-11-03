@@ -332,7 +332,7 @@ export class Go54Provider implements MailProvider {
   }
 
   capabilities(): ReadonlySet<ProviderCapability> {
-    return new Set<ProviderCapability>(['listFolders', 'listMessages', 'readMessage']);
+    return new Set<ProviderCapability>(['listFolders', 'listMessages', 'readMessage', 'mutateFlags']);
   }
 
   async checkHealth(): Promise<ProviderHealth> {

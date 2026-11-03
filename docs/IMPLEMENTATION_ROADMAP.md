@@ -74,7 +74,8 @@ Keep all five files together inside each feature directory. Do not create global
 - [x] Bound each text/html body-part fetch to 256 KiB; return attachment metadata only.
 - [x] Build the responsive inbox UI against the read endpoints.
 - [x] Add fake-provider pagination contract tests and server-side HTML sanitisation tests.
-- [ ] Add GO54 adapter tests for UID pagination, UIDVALIDITY changes, body bounds, and safe failure mapping.
+- [x] Add GO54 adapter tests for attachment size rejection, stream lifecycle, UIDVALIDITY rejection, and `\\Seen` flag updates.
+- [ ] Add GO54 adapter tests for folder/message pagination, cursor tampering, and bounded message body reads.
 - [x] Implement authorised attachment streaming with a 10 MiB cap and safe download headers.
 - [x] Add read/unread mutation using IMAP `\\Seen`, gated by MANAGE or ADMINISTER grants; opening a message does not mutate state.
 - [ ] Add sync checkpoints only where required; preserve UIDVALIDITY correctness.

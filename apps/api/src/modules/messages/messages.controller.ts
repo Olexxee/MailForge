@@ -64,7 +64,10 @@ export const setMessageReadState = async (req: Request, res: Response) => {
 };
 
 const safeFilename = (value: string): string => {
-  const filename = value.replace(/[\u0000-\u001f\u007f/\\]/g, '_').slice(0, 180).trim();
+  const filename = Array.from(value, (character) => {
+    const code = character.charCodeAt(0);
+    return code < 32 || code === 127 || character === '/' || character === '\\\\' ? '_' : character;
+  }).join('').slice(0, 180).trim();
   return filename || 'attachment';
 };
 

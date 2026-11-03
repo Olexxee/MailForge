@@ -15,7 +15,7 @@ export const findMembership = (organisationId: string, userId: string) =>
 
 export const listMembers = (organisationId: string) =>
   prisma.organizationMembership.findMany({
-    where: { organisationId, isActive: true },
+    where: { organisationId },
     include: { user: { select: { id: true, email: true, displayName: true } } },
     orderBy: { createdAt: 'asc' },
   });

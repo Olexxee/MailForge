@@ -143,3 +143,18 @@ td { padding: 14px 20px; border-top: 1px solid #f0f2f4; color: #586772; font-siz
   .invite-form button { grid-column: auto; }
   .auth-card { padding: 28px 22px; }
 }
+
+/* Phase 2 domain and mailbox administration */
+.phase2-stack { display: flex; flex-direction: column; gap: 22px; }
+.alert-success { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 12px 15px; border: 1px solid #cde9dc; border-radius: 8px; background: #f0faf5; color: #246447; font-size: 13px; }
+.alert-success button { border: 0; background: transparent; color: inherit; font-size: 19px; cursor: pointer; }
+.pending-status { color: #91651e; }
+.pending-status i { background: #d7a444; }
+.mailbox-connect-form { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.invite-created > div { display: grid; gap: 5px; margin: 10px 0; }
+.invite-created code { display: block; overflow-wrap: anywhere; padding: 10px 12px; border-radius: 6px; background: #f4f7f8; color: #31434d; font-size: 12px; }
+.invite-created .small-copy { color: #71818a; font-size: 11px; }
+.phase2-stack .panel-footnote { margin-top: 12px; }
+@media (max-width: 760px) {
+  .mailbox-connect-form { grid-template-columns: 1fr; }
+}

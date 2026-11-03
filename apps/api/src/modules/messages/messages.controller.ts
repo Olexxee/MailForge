@@ -38,7 +38,7 @@ export const getMessage = async (req: Request, res: Response) => {
     mailboxId: req.params.mailboxId as string,
     actorId: auth.userId,
     folderId: req.params.folderId as string,
-    messageUid: req.params.messageUid as unknown as number,
+    messageId: req.params.messageId as string,
   });
   res.setHeader('Cache-Control', 'no-store');
   res.json({ success: true, data: { message }, requestId: res.locals.requestId });

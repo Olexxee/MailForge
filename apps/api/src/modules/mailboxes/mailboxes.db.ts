@@ -107,7 +107,7 @@ export const listMailboxGrants = (organisationId: string, mailboxId: string) =>
       id: true,
       permission: true,
       createdAt: true,
-      user: { select: { id: true, email: true, displayName: true, isActive: true } },
+      membership: { select: { user: { select: { id: true, email: true, displayName: true, isActive: true } } } },
     },
     orderBy: { createdAt: 'asc' },
   });
@@ -135,7 +135,7 @@ export const upsertMailboxGrant = (input: {
       grantedById: input.grantedById,
     },
     update: { permission: input.permission, grantedById: input.grantedById, revokedAt: null },
-    select: { id: true, permission: true, createdAt: true, user: { select: { id: true, email: true, displayName: true } } },
+    select: { id: true, permission: true, createdAt: true, membership: { select: { user: { select: { id: true, email: true, displayName: true } } } } },
   });
   await tx.auditLog.create({
     data: {
@@ -193,7 +193,7 @@ export const revokeMailboxGrant = (input: {
         userId: { not: input.userId },
         permission: 'ADMINISTER',
         revokedAt: null,
-        user: { isActive: true, memberships: { some: { organisationId: input.organisationId, isActive: true } } },
+        membership: { isActive: true, user: { isActive: true } },
       },
     });
     if (remainingAdministrators === 0) return -1;

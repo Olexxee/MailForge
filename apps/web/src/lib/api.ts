@@ -104,7 +104,7 @@ export async function apiDownload(path: string, filename: string): Promise<void>
   link.href = objectUrl;
   link.download = Array.from(filename, (character) => {
     const code = character.charCodeAt(0);
-    return code < 32 || code === 127 || character === '/' || character === '\\\\' ? '_' : character;
+    return code < 32 || code === 127 || code === 47 || code === 92 ? '_' : character;
   }).join('').slice(0, 180) || 'attachment';
   document.body.appendChild(link);
   link.click();

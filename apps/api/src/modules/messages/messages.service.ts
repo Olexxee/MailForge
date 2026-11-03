@@ -145,3 +145,58 @@ export const getMailboxMessage = async (input: {
     providerError(error);
   }
 };
+
+const MAX_ATTACHMENT_BYTES = 10 * 1024 * 1024;
+
+export const downloadMailboxAttachment = async (input: {
+  organisationId: string;
+  mailboxId: string;
+  actorId: string;
+  folderId: string;
+  messageId: string;
+  partId: string;
+}) => {
+  const provider = await getProvider(input.organisationId, input.mailboxId, input.actorId);
+  const folderId = decodeFolderId(input.folderId);
+  try {
+    const attachment = await provider.downloadAttachment(
+      folderId,
+      input.messageId,
+      input.partId,
+      MAX_ATTACHMENT_BYTES,
+    );
+    if (!attachment) throw new AppError('ATTACHMENT_NOT_FOUND', 404, 'Attachment was not found in this message');
+    return attachment;
+  } catch (error) {
+    if (error instanceof AppError) throw error;
+    const code = error && typeof error === 'object' && 'code' in error
+      ? String((error as { code: unknown }).code)
+      : '';
+    if (code === 'ATTACHMENT_TOO_LARGE') {
+      throw new AppError('ATTACHMENT_TOO_LARGE', 413, 'This attachment exceeds the 10 MiB download limit');
+    }
+    if (code === 'ATTACHMENT_REQUEST_INVALID') {
+      throw new AppError('ATTACHMENT_INVALID', 400, 'The requested attachment is invalid');
+    }
+    providerError(error);
+  }
+};
+
+export const updateMailboxMessageReadState = async (input: {
+  organisationId: string;
+  mailboxId: string;
+  actorId: string;
+  folderId: string;
+  messageId: string;
+  unread: boolean;
+}) => {
+  await assertMailboxPermission(input.organisationId, input.mailboxId, input.actorId, 'MANAGE');
+  const provider = await getProvider(input.organisationId, input.mailboxId, input.actorId);
+  const folderId = decodeFolderId(input.folderId);
+  try {
+    await provider.setMessageSeen(folderId, input.messageId, !input.unread);
+    return { unread: input.unread };
+  } catch (error) {
+    providerError(error);
+  }
+};

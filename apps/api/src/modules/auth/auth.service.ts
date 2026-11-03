@@ -1,6 +1,6 @@
 import { AppError } from '../../lib/http.js';
 import { createOpaqueToken, hashToken, verifyPassword } from '../../lib/crypto.js';
-import { createSession, findActiveSession, findUserByEmail, findUserById, revokeSession, rotateSession } from './auth.db.js';
+import { createSession, findActiveSession, findUserByEmail, findUserById, revokeSession, rotateSession, updateSessionCsrfHash } from './auth.db.js';
 
 const SESSION_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 const ABSOLUTE_SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000;
@@ -61,4 +61,11 @@ export const getCurrentUser = async (userId: string) => {
   const user = await findUserById(userId);
   if (!user || !user.isActive) throw new AppError('UNAUTHENTICATED', 401, 'Authentication required');
   return user;
+};
+
+export const renewCsrfToken = async (sessionId: string) => {
+  const token = createOpaqueToken(24);
+  const updated = await updateSessionCsrfHash(sessionId, hashToken(token));
+  if (updated.count !== 1) throw new AppError('SESSION_EXPIRED', 401, 'Session is no longer valid');
+  return token;
 };

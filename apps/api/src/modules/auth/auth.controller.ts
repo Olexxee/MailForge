@@ -7,7 +7,7 @@ const isProduction = () => process.env.NODE_ENV === 'production';
 const cookieOptions = (maxAge?: number) => [
   'Path=/api/v1',
   'HttpOnly',
-  isProduction() ? 'SameSite=None' : 'SameSite=Lax',
+  'SameSite=Lax',
   ...(isProduction() ? ['Secure'] : []),
   ...(maxAge === undefined ? [] : [`Max-Age=${Math.floor(maxAge / 1000)}`]),
 ].join('; ');
@@ -15,7 +15,7 @@ const cookieOptions = (maxAge?: number) => [
 export const setSessionCookies = (res: Response, sessionToken: string, csrfToken: string, expiresAt: Date) => {
   const maxAge = expiresAt.getTime() - Date.now();
   res.append('Set-Cookie', `${SESSION_COOKIE}=${encodeURIComponent(sessionToken)}; ${cookieOptions(maxAge)}`);
-  const csrfAttributes = isProduction() ? 'SameSite=None; Secure;' : 'SameSite=Lax;';
+  const csrfAttributes = isProduction() ? 'SameSite=Lax; Secure;' : 'SameSite=Lax;';
   res.append('Set-Cookie', `${CSRF_COOKIE}=${encodeURIComponent(csrfToken)}; Path=/api/v1; ${csrfAttributes} Max-Age=${Math.floor(maxAge / 1000)}`);
 };
 

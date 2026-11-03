@@ -1,8 +1,8 @@
 import type { RequestHandler } from 'express';
-import { AppError } from '../../app.js';
+import { AppError } from '../../lib/http.js';
 import { hashToken, safeEqual } from '../../lib/crypto.js';
 import { getSession } from './auth.service.js';
-import { readCookie } from './auth.controller.js';
+import { readCookie } from '../../lib/cookies.js';
 
 export const requireTrustedOrigin: RequestHandler = (req, _res, next) => {
   const origin = req.header('origin');

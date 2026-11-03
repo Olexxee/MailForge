@@ -31,7 +31,17 @@ export const validateBody = (schema: ZodType): RequestHandler => (req, _res, nex
   next();
 };
 
-export const validateQuery = (schema: ZodType): RequestHandler => (req, _res, next) => {\n  const parsed = schema.safeParse(req.query);\n  if (!parsed.success) {\n    next(parsed.error);\n    return;\n  }\n  res.locals.validatedQuery = parsed.data;\n  next();\n};\n\nexport const validateParams = (schema: ZodType): RequestHandler => (req, _res, next) => {
+export const validateQuery = (schema: ZodType): RequestHandler => (req, res, next) => {
+  const parsed = schema.safeParse(req.query);
+  if (!parsed.success) {
+    next(parsed.error);
+    return;
+  }
+  res.locals.validatedQuery = parsed.data;
+  next();
+};
+
+export const validateParams = (schema: ZodType): RequestHandler => (req, _res, next) => {
   const parsed = schema.safeParse(req.params);
   if (!parsed.success) {
     next(parsed.error);

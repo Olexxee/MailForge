@@ -23,6 +23,14 @@ describe('credential encryption', () => {
     expect(decryptCredential(first.ciphertext, first.keyVersion, 'org-a:mailbox-a')).toBe('provider-password');
   });
 
+  it('rejects ciphertext copied to a different organisation or mailbox context', () => {
+    process.env.CREDENTIAL_ENCRYPTION_KEYS_JSON = JSON.stringify({ 1: keyOne });
+    process.env.CREDENTIAL_ENCRYPTION_ACTIVE_KEY_VERSION = '1';
+    const encrypted = encryptCredential('provider-secret', 'org-a:mailbox-a');
+    expect(() => decryptCredential(encrypted.ciphertext, 1, 'org-b:mailbox-a'))
+      .toThrow('CREDENTIAL_DECRYPTION_FAILED');
+  });
+
   it('supports decrypting old credentials after the active key rotates', () => {
     process.env.CREDENTIAL_ENCRYPTION_KEYS_JSON = JSON.stringify({ 1: keyOne, 2: keyTwo });
     process.env.CREDENTIAL_ENCRYPTION_ACTIVE_KEY_VERSION = '1';

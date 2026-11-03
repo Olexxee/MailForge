@@ -3,7 +3,7 @@ import cors from 'cors';
 import express, { type ErrorRequestHandler, type RequestHandler } from 'express';
 import helmet from 'helmet';
 import pino from 'pino';
-import pinoHttp from 'pino-http';
+import { pinoHttp } from 'pino-http';
 import { randomUUID } from 'node:crypto';
 import { ZodError, z } from 'zod';
 import { rateLimit } from 'express-rate-limit';
@@ -51,9 +51,11 @@ const requestContext: RequestHandler = (_req, res, next) => {
 };
 
 const notFound: RequestHandler = (req, _res, next) =>
-  next(new AppError('ROUTE_NOT_FOUND', 404, 'Route ' + req.method + ' ' + req.path + ' was not found));
+  next(new AppError('ROUTE_NOT_FOUND', 404, `Route ${req.method} ${req.path} was not found`));
 
-export const errorHandler: ErrorRequestHandler = (error: unknown, _req, res) => {
+export const errorHandler: ErrorRequestHandler = (error: unknown, _req, res, next) => {
+  // Express identifies error middleware by its four-argument function signature.
+  void next;
   const requestId = (res.locals.requestId as string | undefined) ?? 'unknown';
   if (error instanceof ZodError) {
     res.status(400).json({

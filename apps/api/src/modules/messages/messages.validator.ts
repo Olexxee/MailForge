@@ -17,3 +17,11 @@ export const messagesQuerySchema = z.object({
   limit: z.coerce.number().int().min(1).max(50).default(25),
   cursor: z.string().min(1).max(2048).optional(),
 }).strict();
+
+export const attachmentParamsSchema = messageDetailParamsSchema.extend({
+  partId: z.string().regex(/^[0-9]+(?:\\.[0-9]+)*$/).max(64),
+});
+
+export const messageReadStateBodySchema = z.object({
+  unread: z.boolean(),
+}).strict();

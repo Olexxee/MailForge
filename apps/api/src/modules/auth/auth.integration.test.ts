@@ -6,6 +6,7 @@ import { getSession, issueSession, renewCsrfToken, revokeUserSession, rotateUser
 import {
   acceptInvitation,
   acceptInvitationForExistingUser,
+  getPendingInvitations,
   inviteMember,
   revokeOrganisationInvitation,
 } from '../invitations/invitations.service.js';

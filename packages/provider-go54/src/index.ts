@@ -1,10 +1,13 @@
 import { ImapFlow } from 'imapflow';
 import nodemailer from 'nodemailer';
-import { ProviderCapabilityError, type MailProvider, type ProviderCapability, type ProviderHealth } from '@mailforge/provider-core';
+import {
+  ProviderCapabilityError,
+  type MailProvider,
+  type ProviderCapability,
+  type ProviderHealth,
+} from '@mailforge/provider-core';
 
 export const GO54_PROVIDER_ID = 'go54' as const;
-export const GO54_IMAP_HOST = 'imap.go54mail.com';
-export const GO54_SMTP_HOST = 'smtp.go54mail.com';
 
 export interface Go54Credentials {
   email: string;
@@ -16,6 +19,37 @@ export interface Go54HealthChecks {
   checkSmtp: () => Promise<void>;
 }
 
+interface Go54ServerConfig {
+  imapHost: string;
+  imapPort: 993 | 143;
+  smtpHost: string;
+  smtpPort: 465 | 587;
+}
+
+const codedError = (code: string): Error & { code: string } =>
+  Object.assign(new Error(code), { code });
+
+const readServerConfig = (): Go54ServerConfig => {
+  const imapHost = process.env.GO54_IMAP_HOST?.trim();
+  const smtpHost = process.env.GO54_SMTP_HOST?.trim();
+  if (!imapHost) throw codedError('GO54_IMAP_HOST_NOT_CONFIGURED');
+  if (!smtpHost) throw codedError('GO54_SMTP_HOST_NOT_CONFIGURED');
+  const hostnamePattern = /^(?=.{1,253}$)[a-zA-Z0-9](?:[a-zA-Z0-9.-]*[a-zA-Z0-9])?$/;
+  if (!hostnamePattern.test(imapHost) || !hostnamePattern.test(smtpHost)) {
+    throw codedError('GO54_HOST_CONFIGURATION_INVALID');
+  }
+  const imapPort = Number(process.env.GO54_IMAP_PORT ?? '993');
+  const smtpPort = Number(process.env.GO54_SMTP_PORT ?? '465');
+  if (imapPort !== 993 && imapPort !== 143) throw codedError('GO54_IMAP_PORT_UNSUPPORTED');
+  if (smtpPort !== 465 && smtpPort !== 587) throw codedError('GO54_SMTP_PORT_UNSUPPORTED');
+  return {
+    imapHost,
+    imapPort,
+    smtpHost,
+    smtpPort,
+  };
+};
+
 const safeErrorCode = (error: unknown): string => {
   if (error && typeof error === 'object' && 'code' in error) {
     const code = (error as { code?: unknown }).code;
@@ -25,10 +59,12 @@ const safeErrorCode = (error: unknown): string => {
 };
 
 const checkImap = async (credentials: Go54Credentials): Promise<void> => {
+  const config = readServerConfig();
   const client = new ImapFlow({
-    host: GO54_IMAP_HOST,
-    port: 993,
-    secure: true,
+    host: config.imapHost,
+    port: config.imapPort,
+    secure: config.imapPort === 993,
+    ...(config.imapPort === 143 ? { doSTARTTLS: true } : {}),
     auth: { user: credentials.email, pass: credentials.password },
     logger: false,
     connectionTimeout: 10_000,
@@ -46,11 +82,13 @@ const checkImap = async (credentials: Go54Credentials): Promise<void> => {
 };
 
 const checkSmtp = async (credentials: Go54Credentials): Promise<void> => {
+  const config = readServerConfig();
+  const implicitTls = config.smtpPort === 465;
   const transporter = nodemailer.createTransport({
-    host: GO54_SMTP_HOST,
-    port: 587,
-    secure: false,
-    requireTLS: true,
+    host: config.smtpHost,
+    port: config.smtpPort,
+    secure: implicitTls,
+    ...(!implicitTls ? { requireTLS: true } : {}),
     auth: { user: credentials.email, pass: credentials.password },
     tls: { minVersion: 'TLSv1.2', rejectUnauthorized: true },
     connectionTimeout: 10_000,

@@ -29,6 +29,9 @@ interface Go54SmtpConfig {
   port: 465 | 587;
 }
 
+const codedError = (code: string): Error & { code: string } =>
+  Object.assign(new Error(code), { code });
+
 const validateHostname = (host: string, errorCode: string): string => {
   const value = host.trim();
   const pattern = /^(?=.{1,253}$)[a-zA-Z0-9](?:[a-zA-Z0-9.-]*[a-zA-Z0-9])?$/;

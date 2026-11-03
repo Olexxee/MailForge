@@ -8,6 +8,9 @@ import { randomUUID } from 'node:crypto';
 import { ZodError, z } from 'zod';
 import { rateLimit } from 'express-rate-limit';
 import { API_PREFIX } from '@mailforge/shared';
+import { authRouter } from './modules/auth/auth.route.js';
+import { organisationsRouter } from './modules/organisations/organisations.route.js';
+import { invitationsRouter } from './modules/invitations/invitations.route.js';
 
 const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
@@ -106,6 +109,10 @@ app.use(helmet());
 app.use(cors({ origin: env.WEB_ORIGIN, credentials: true }));
 app.use(express.json({ limit: '1mb' }));
 app.use(express.urlencoded({ extended: false, limit: '1mb' }));
+
+app.use(API_PREFIX + '/auth', authRouter);
+app.use(API_PREFIX + '/organisations', organisationsRouter);
+app.use(API_PREFIX, invitationsRouter);
 
 app.get(API_PREFIX + '/health/live', (_req, res) =>
   res.status(200).json({ success: true, data: { status: 'ok' }, requestId: res.locals.requestId }),

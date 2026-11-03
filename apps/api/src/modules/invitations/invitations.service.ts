@@ -2,7 +2,7 @@ import { AppError } from '../../app.js';
 import { createOpaqueToken, hashPassword, hashToken } from '../../lib/crypto.js';
 import { prisma } from '../../lib/prisma.js';
 import { assertOrganisationRole } from '../organisations/organisations.service.js';
-import { acceptInvitationTransaction, createInvitation, findInvitationByTokenHash } from './invitations.db.js';
+import { acceptInvitationTransaction, createInvitation, findInvitationByTokenHash, revokeInvitation } from './invitations.db.js';
 
 export const inviteMember = async (input: {
   organisationId: string; actorId: string; email: string; role: 'ADMIN' | 'STAFF';
@@ -55,4 +55,21 @@ export const acceptInvitation = async (input: {
   if (!result) throw new AppError('INVITATION_INVALID', 400, 'Invitation is invalid or has expired');
   if (result.existingUser) throw new AppError('ACCOUNT_EXISTS', 409, 'An account already exists for this email; sign in and ask an organisation admin to grant access');
   return { userId: result.user.id, email: result.user.email, displayName: result.user.displayName };
+};
+
+export const revokeOrganisationInvitation = async (input: {
+  organisationId: string; invitationId: string; actorId: string;
+}) => {
+  await assertOrganisationRole(input.organisationId, input.actorId, ['OWNER', 'ADMIN']);
+  const result = await revokeInvitation(input.organisationId, input.invitationId);
+  if (result.count !== 1) throw new AppError('INVITATION_NOT_FOUND', 404, 'Pending invitation was not found');
+  await prisma.auditLog.create({
+    data: {
+      organisationId: input.organisationId,
+      actorId: input.actorId,
+      action: 'INVITATION_REVOKED',
+      resourceType: 'OrganizationInvitation',
+      resourceId: input.invitationId,
+    },
+  });
 };

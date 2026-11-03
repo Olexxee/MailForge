@@ -102,7 +102,10 @@ export async function apiDownload(path: string, filename: string): Promise<void>
   const objectUrl = URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.href = objectUrl;
-  link.download = filename.replace(/[\u0000-\u001f\u007f/\\]/g, '_').slice(0, 180) || 'attachment';
+  link.download = Array.from(filename, (character) => {
+    const code = character.charCodeAt(0);
+    return code < 32 || code === 127 || character === '/' || character === '\\\\' ? '_' : character;
+  }).join('').slice(0, 180) || 'attachment';
   document.body.appendChild(link);
   link.click();
   link.remove();

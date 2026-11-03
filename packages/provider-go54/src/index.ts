@@ -371,8 +371,8 @@ export class Go54Provider implements MailProvider {
           ? await client.fetchAll(pageUids, { envelope: true, flags: true, internalDate: true, size: true }, { uid: true })
           : [];
         const messages = fetched
-          .map((message) => toSummary(message, folderId, uidValidity))
-          .sort((a, b) => b.receivedAt.getTime() - a.receivedAt.getTime());
+          .sort((a, b) => b.uid - a.uid)
+          .map((message) => toSummary(message, folderId, uidValidity));
         const nextBeforeUid = uids.length > limit
           ? (pageUids[pageUids.length - 1] ?? 1) - 1
           : minUid - 1;

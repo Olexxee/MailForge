@@ -34,7 +34,7 @@ Tests prove mailbox isolation, secret encryption/redaction, HTML sanitization, a
 
 ## Phase 2 provider credential and mailbox controls
 
-- GO54 passwords are encrypted with AES-256-GCM using a random 96-bit IV and authentication tag. The database stores the versioned ciphertext and key version; plaintext credentials exist only in the request/service process while validating a connection.
+- GO54 passwords are encrypted with AES-256-GCM using a random 96-bit IV, authentication tag, and associated data binding the ciphertext to its organisation and mailbox email. The database stores the versioned ciphertext and key version; plaintext credentials exist only in the request/service process while validating a connection.
 - Configure `CREDENTIAL_ENCRYPTION_KEYS_JSON` as a JSON map from integer key versions to base64-encoded 32-byte keys, and `CREDENTIAL_ENCRYPTION_ACTIVE_KEY_VERSION` as the active version. Keep the keyring in deployment secrets, never PostgreSQL or Git. Retain old key versions until all records encrypted with them have been re-encrypted and verified.
 - Domain ownership requires a DNS TXT challenge. Mailbox creation is blocked until the domain is VERIFIED. MailForge does not modify DNS.
 - GO54 IMAP and SMTP checks are independent. Trusted server-side endpoint settings select IMAP 993/143 and SMTP 465/587; implicit TLS or required STARTTLS is enforced with certificate verification and TLS 1.2 minimum. No browser-supplied host is accepted. Validation does not send an email.

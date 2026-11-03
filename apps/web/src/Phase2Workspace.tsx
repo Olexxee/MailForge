@@ -68,7 +68,12 @@ export function Phase2Workspace({ organisationId, canManage, section }: {
     }
   }, [organisationId]);
 
-  useEffect(() => { void load(); }, [load]);
+  useEffect(() => {
+    setVerification(null);
+    setSelectedMailbox(null);
+    setGrants([]);
+    void load();
+  }, [load]);
 
   const createDomain = async (event: FormEvent) => {
     event.preventDefault();
@@ -102,6 +107,24 @@ export function Phase2Workspace({ organisationId, canManage, section }: {
       await load();
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Domain verification failed.');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const rotateChallenge = async (id: string) => {
+    setBusy(true);
+    setError('');
+    setVerification(null);
+    try {
+      const result = await apiRequest<{ verificationRecord: VerificationRecord }>(
+        `/organisations/${organisationId}/domains/${id}/verification-challenge`,
+        { method: 'POST' },
+      );
+      setVerification(result.verificationRecord);
+      setNotice('A new TXT challenge was generated. Replace the previous DNS value.');
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Could not generate a new DNS challenge.');
     } finally {
       setBusy(false);
     }
@@ -245,7 +268,7 @@ export function Phase2Workspace({ organisationId, canManage, section }: {
                 <td><strong>{domain.name}</strong></td>
                 <td><span className={domain.status === 'VERIFIED' ? 'status active-status' : 'status pending-status'}><i />{domain.status}</span></td>
                 <td>{dateLabel(domain.verifiedAt)}</td>
-                {canManage && <td className="actions-col">{domain.status === 'PENDING' ? <button className="small-action" disabled={busy} onClick={() => void verifyDomain(domain.id)}>Verify DNS</button> : <span className="protected-label">Verified</span>}</td>}
+                {canManage && <td className="actions-col">{domain.status === 'PENDING' ? <div className="member-actions"><button className="small-action" disabled={busy} onClick={() => void verifyDomain(domain.id)}>Verify DNS</button><button className="small-action" disabled={busy} onClick={() => void rotateChallenge(domain.id)}>New TXT value</button></div> : <span className="protected-label">Verified</span>}</td>}
               </tr>)}
               {domains.length === 0 && <tr><td colSpan={canManage ? 4 : 3} className="table-empty">No domains registered yet.</td></tr>}</tbody>
             </table></div>

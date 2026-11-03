@@ -82,6 +82,33 @@ export async function apiRequest<T>(
   return payload.data;
 }
 
+
+export async function apiDownload(path: string, filename: string): Promise<void> {
+  const response = await fetch(`${API_BASE}${path}`, {
+    method: 'GET',
+    credentials: 'include',
+    headers: { Accept: 'application/octet-stream' },
+  });
+  if (!response.ok) {
+    const payload = await parseResponse<unknown>(response);
+    const failure = payload as ApiFailure;
+    throw new ApiError(
+      failure.error?.message ?? 'The attachment could not be downloaded.',
+      response.status,
+      failure.error?.code,
+    );
+  }
+  const blob = await response.blob();
+  const objectUrl = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = objectUrl;
+  link.download = filename || 'attachment';
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  window.setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
+}
+
 export const bootstrapSession = async () => {
   const csrf = await apiRequest<{ csrfToken: string }>('/auth/csrf');
   setCsrfToken(csrf.csrfToken);

@@ -1,4 +1,4 @@
-import { AppError } from '../../app.js';
+import { AppError } from '../../lib/http.js';
 import { createOpaqueToken, hashPassword, hashToken } from '../../lib/crypto.js';
 import { prisma } from '../../lib/prisma.js';
 import { assertOrganisationRole } from '../organisations/organisations.service.js';

@@ -37,10 +37,11 @@ export const connectGo54Mailbox = async (input: {
   password: string;
 }) => {
   await assertOrganisationRole(input.organisationId, input.actorId, ['OWNER', 'ADMIN']);
-  const email = input.email.trim().toLowerCase();
-  const separator = email.lastIndexOf('@');
+  const emailInput = input.email.trim().toLowerCase();
+  const separator = emailInput.lastIndexOf('@');
   if (separator < 1) throw new AppError('MAILBOX_EMAIL_INVALID', 400, 'Enter a valid mailbox email address');
-  const emailDomain = domainToASCII(email.slice(separator + 1));
+  const emailDomain = domainToASCII(emailInput.slice(separator + 1));
+  const email = emailDomain ? `${emailInput.slice(0, separator)}@${emailDomain}` : emailInput;
   const domain = await findVerifiedDomain(input.organisationId, input.domainId);
   if (!domain) throw new AppError('DOMAIN_NOT_VERIFIED', 409, 'Verify the organisation domain before connecting a mailbox');
   if (!emailDomain || emailDomain !== domain.name) {

@@ -1,6 +1,4 @@
 import type { Request, Response } from 'express';
-import { AppError } from '../../lib/http.js';
-import { readCookie } from '../../lib/cookies.js';
 import { getCurrentUser, issueSession, revokeUserSession, rotateUserSession, authenticateCredentials } from './auth.service.js';
 
 const SESSION_COOKIE = 'mf_session';
@@ -67,8 +65,3 @@ export const refresh = async (_req: Request, res: Response) => {
   res.json({ success: true, data: { user: userPayload(user), csrfToken: session.csrfToken }, requestId: res.locals.requestId });
 };
 
-export const assertAuthContext = (res: Response) => {
-  const auth = res.locals.auth as { userId: string; sessionId: string } | undefined;
-  if (!auth) throw new AppError('UNAUTHENTICATED', 401, 'Authentication required');
-  return auth;
-};

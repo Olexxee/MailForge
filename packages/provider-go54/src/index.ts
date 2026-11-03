@@ -453,7 +453,7 @@ export class Go54Provider implements MailProvider {
     if (
       !folderId || folderId.length > 500 ||
       !messageId || messageId.length > 512 ||
-      !/^[0-9]+(?:\\.[0-9]+)*$/.test(partId) ||
+      !/^[0-9]+(?:\.[0-9]+)*$/.test(partId) ||
       !Number.isSafeInteger(maxBytes) || maxBytes < 1 || maxBytes > MAX_ATTACHMENT_BYTES
     ) throw codedError('ATTACHMENT_REQUEST_INVALID');
 

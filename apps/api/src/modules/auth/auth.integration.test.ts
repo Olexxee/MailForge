@@ -3,14 +3,18 @@ import { randomUUID } from 'node:crypto';
 import { prisma } from '../../lib/prisma.js';
 import { hashPassword, hashToken } from '../../lib/crypto.js';
 import { getSession, issueSession, revokeUserSession, rotateUserSession } from './auth.service.js';
-import { acceptInvitation, acceptInvitationForExistingUser, inviteMember, revokeOrganisationInvitation } from '../invitations/invitations.service.js';
+import {
+  acceptInvitation,
+  acceptInvitationForExistingUser,
+  inviteMember,
+  revokeOrganisationInvitation,
+} from '../invitations/invitations.service.js';
 import { changeOrganisationMembership, getOrganisationMembers } from '../organisations/organisations.service.js';
 
 const suffix = randomUUID();
 const ownerEmail = `owner-${suffix}@mailforge.test`;
 const adminEmail = `admin-${suffix}@mailforge.test`;
 const staffEmail = `staff-${suffix}@mailforge.test`;
-const organisationSlug = `test-${suffix}`;
 const userIds: string[] = [];
 const organisationIds: string[] = [];
 let ownerId = '';
@@ -21,17 +25,27 @@ let secondOrganisationId = '';
 
 describe('Phase 1 authentication and organisation workflows', () => {
   beforeAll(async () => {
-    const passwordHash = await hashPassword('integration-test-password-123');
-    const owner = await prisma.user.create({ data: { email: ownerEmail, displayName: 'Test Owner', passwordHash } });
-    const admin = await prisma.user.create({ data: { email: adminEmail, displayName: 'Test Admin', passwordHash } });
-    const staff = await prisma.user.create({ data: { email: staffEmail, displayName: 'Test Staff', passwordHash } });
+    const [ownerPasswordHash, adminPasswordHash, staffPasswordHash] = await Promise.all([
+      hashPassword('integration-test-password-123'),
+      hashPassword('integration-test-password-123'),
+      hashPassword('integration-test-password-123'),
+    ]);
+    const owner = await prisma.user.create({
+      data: { email: ownerEmail, displayName: 'Test Owner', passwordHash: ownerPasswordHash },
+    });
+    const admin = await prisma.user.create({
+      data: { email: adminEmail, displayName: 'Test Admin', passwordHash: adminPasswordHash },
+    });
+    const staff = await prisma.user.create({
+      data: { email: staffEmail, displayName: 'Test Staff', passwordHash: staffPasswordHash },
+    });
     userIds.push(owner.id, admin.id, staff.id);
     ownerId = owner.id;
     adminId = admin.id;
     staffId = staff.id;
 
     const organisation = await prisma.organisation.create({
-      data: { name: 'MailForge Integration Test', slug: organisationSlug },
+      data: { name: 'MailForge Integration Test', slug: `test-${suffix}` },
     });
     const secondOrganisation = await prisma.organisation.create({
       data: { name: 'MailForge Second Test', slug: `second-${suffix}` },
@@ -55,12 +69,14 @@ describe('Phase 1 authentication and organisation workflows', () => {
     await prisma.user.deleteMany({ where: { id: { in: userIds } } });
   });
 
-  it('denies staff access to organisation administration data', async () => {
+  it('denies staff access and blocks cross-organisation membership reads', async () => {
     await expect(getOrganisationMembers(organisationId, staffId))
+      .rejects.toMatchObject({ code: 'ACCESS_DENIED', statusCode: 403 });
+    await expect(getOrganisationMembers(secondOrganisationId, adminId))
       .rejects.toMatchObject({ code: 'ACCESS_DENIED', statusCode: 403 });
   });
 
-  it('prevents admins from promoting staff or changing other admins', async () => {
+  it('prevents admins from promoting staff or changing owners', async () => {
     await expect(changeOrganisationMembership({
       organisationId, actorId: adminId, targetUserId: staffId, role: 'ADMIN',
     })).rejects.toMatchObject({ code: 'ACCESS_DENIED', statusCode: 403 });
@@ -122,7 +138,24 @@ describe('Phase 1 authentication and organisation workflows', () => {
     expect(membership?.role).toBe('ADMIN');
   });
 
-  it('rejects expired invitations', async () => {\n    const token = `expired-${suffix}-invitation-token-1234567890`;\n    await prisma.organizationInvitation.create({\n      data: {\n        organisationId,\n        email: `expired-${suffix}@mailforge.test`,\n        role: 'STAFF',\n        tokenHash: hashToken(token),\n        inviterId: ownerId,\n        expiresAt: new Date(Date.now() - 60_000),\n      },\n    });\n    await expect(acceptInvitation({\n      token, displayName: 'Expired User', password: 'a-secure-password-123',\n    })).rejects.toMatchObject({ code: 'INVITATION_INVALID' });\n  });\n\n  it('rejects revoked invitations', async () => {
+  it('rejects expired invitations', async () => {
+    const token = `expired-${suffix}-invitation-token-1234567890`;
+    await prisma.organizationInvitation.create({
+      data: {
+        organisationId,
+        email: `expired-${suffix}@mailforge.test`,
+        role: 'STAFF',
+        tokenHash: hashToken(token),
+        inviterId: ownerId,
+        expiresAt: new Date(Date.now() - 60_000),
+      },
+    });
+    await expect(acceptInvitation({
+      token, displayName: 'Expired User', password: 'a-secure-password-123',
+    })).rejects.toMatchObject({ code: 'INVITATION_INVALID' });
+  });
+
+  it('rejects revoked invitations', async () => {
     const invitation = await inviteMember({
       organisationId, actorId: ownerId, email: `revoked-${suffix}@mailforge.test`, role: 'STAFF',
     });

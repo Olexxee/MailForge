@@ -17,7 +17,8 @@ try {
   const passwordHash = await hashPassword(input.BOOTSTRAP_OWNER_PASSWORD);
   await prisma.$transaction(async (tx) => {
     // Serialise bootstrap attempts so two concurrent CLI runs cannot create competing owners.
-    const [lock] = await tx.$queryRaw<Array<{ acquired: boolean }>>`SELECT pg_try_advisory_xact_lock(781234567890) AS acquired`;\n    if (!lock?.acquired) throw new Error('Another owner bootstrap is already running; retry shortly.');
+    const [lock] = await tx.$queryRaw<Array<{ acquired: boolean }>>`SELECT pg_try_advisory_xact_lock(781234567890) AS acquired`;
+    if (!lock?.acquired) throw new Error('Another owner bootstrap is already running; retry shortly.');
     const existingOwner = await tx.organizationMembership.findFirst({
       where: { role: 'OWNER', isActive: true },
     });

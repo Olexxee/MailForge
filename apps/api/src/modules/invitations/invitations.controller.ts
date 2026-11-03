@@ -1,7 +1,7 @@
 import type { Request, Response } from 'express';
 import { issueSession } from '../auth/auth.service.js';
 import { setSessionCookies } from '../auth/auth.controller.js';
-import { acceptInvitation, inviteMember, revokeOrganisationInvitation as revokeInvitation } from './invitations.service.js';
+import { acceptInvitation, acceptInvitationForExistingUser, inviteMember, revokeOrganisationInvitation as revokeInvitation } from './invitations.service.js';
 
 export const createOrganisationInvitation = async (req: Request, res: Response) => {
   const auth = res.locals.auth as { userId: string };
@@ -48,4 +48,11 @@ export const revokeOrganisationInvitation = async (req: Request, res: Response) 
     actorId: auth.userId,
   });
   res.json({ success: true, data: { revoked: true }, requestId: res.locals.requestId });
+};
+
+export const acceptExistingOrganisationInvitation = async (req: Request, res: Response) => {
+  const auth = res.locals.auth as { userId: string; email: string };
+  const body = req.body as { token: string };
+  await acceptInvitationForExistingUser({ token: body.token, userId: auth.userId, email: auth.email });
+  res.json({ success: true, data: { accepted: true }, requestId: res.locals.requestId });
 };

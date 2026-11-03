@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { asyncWrapper, createRateLimiter, validateBody } from '../../app.js';
+import { asyncWrapper, createRateLimiter, validateBody } from '../../lib/http.js';
 import { login, logout, me, refresh } from './auth.controller.js';
 import { requireAuth, requireCsrf, requireTrustedOrigin } from './auth.middleware.js';
 import { loginSchema } from './auth.validator.js';

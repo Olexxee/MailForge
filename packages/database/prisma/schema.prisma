@@ -54,8 +54,6 @@ model User {
   memberships       OrganizationMembership[]
   createdInvitations OrganizationInvitation[] @relation("InvitationInviter")
   auditEvents       AuditLog[]                @relation("AuditActor")
-  mailboxAccess     MailboxAccess[]            @relation("MailboxAccessUser")
-  grantedAccess     MailboxAccess[]            @relation("MailboxAccessGrantor")
   createdDomains    Domain[]                   @relation("DomainCreator")
   createdAt         DateTime                  @default(now())
   updatedAt         DateTime                  @updatedAt
@@ -100,6 +98,8 @@ model OrganizationMembership {
   user           User           @relation(fields: [userId], references: [id], onDelete: Cascade)
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @updatedAt
+  mailboxAccess  MailboxAccess[] @relation("MailboxAccessMembership")
+  grantedMailboxAccess MailboxAccess[] @relation("MailboxAccessGrantorMembership")
 
   @@unique([organisationId, userId])
   @@index([userId, isActive])
@@ -211,8 +211,8 @@ model MailboxAccess {
   revokedAt      DateTime?
   organisation   Organisation      @relation(fields: [organisationId], references: [id], onDelete: Cascade)
   mailbox        Mailbox            @relation(fields: [mailboxId, organisationId], references: [id, organisationId], onDelete: Cascade)
-  user           User               @relation("MailboxAccessUser", fields: [userId], references: [id], onDelete: Cascade)
-  grantedBy      User               @relation("MailboxAccessGrantor", fields: [grantedById], references: [id], onDelete: Restrict)
+  membership     OrganizationMembership @relation("MailboxAccessMembership", fields: [organisationId, userId], references: [organisationId, userId], onDelete: Cascade)
+  grantedByMembership OrganizationMembership @relation("MailboxAccessGrantorMembership", fields: [organisationId, grantedById], references: [organisationId, userId], onDelete: Cascade)
   createdAt      DateTime           @default(now())
   updatedAt      DateTime           @updatedAt
 

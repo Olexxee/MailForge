@@ -108,7 +108,6 @@ const createImapClient = (credentials: Go54Credentials) => {
     logger: false,
     connectionTimeout: 10_000,
     socketTimeout: 20_000,
-    disableAutoIdle: true,
   });
 };
 

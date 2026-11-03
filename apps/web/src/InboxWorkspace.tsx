@@ -142,8 +142,8 @@ export function InboxWorkspace({ organisationId }: { organisationId: string }) {
         </div>
         {mailboxes.length === 0 && <p className="panel-footnote">No mailboxes are available to your account. Ask an organisation administrator for an explicit mailbox grant.</p>}
         {mailboxes.length > 0 && (
-          <div style={{ display: 'grid', gridTemplateColumns: 'minmax(150px, 220px) minmax(0, 1fr)', gap: 20, minHeight: 480 }}>
-            <nav aria-label="Mailbox folders" style={{ borderRight: '1px solid var(--border, #e5e7eb)', paddingRight: 12 }}>
+          <div className="inbox-layout">
+            <nav className="inbox-folders" aria-label="Mailbox folders">
               <p className="eyebrow">FOLDERS</p>
               {folders.map((folder) => (
                 <button key={folder.id} className={folder.id === folderId ? 'nav-item active' : 'nav-item'} style={{ width: '100%', textAlign: 'left' }} onClick={() => setFolderId(folder.id)}>
@@ -152,7 +152,7 @@ export function InboxWorkspace({ organisationId }: { organisationId: string }) {
               ))}
               {folders.length === 0 && <p className="muted small-copy">{loading ? 'Loading folders…' : 'No folders returned.'}</p>}
             </nav>
-            <div style={{ minWidth: 0 }}>
+            <div className="inbox-message-pane">
               {selectedMessage ? (
                 <article>
                   <button className="small-action" onClick={() => setSelectedMessage(null)}>← Back to messages</button>
@@ -189,8 +189,8 @@ export function InboxWorkspace({ organisationId }: { organisationId: string }) {
                       <thead><tr><th>Sender / Subject</th><th>Received</th><th>Size</th></tr></thead>
                       <tbody>
                         {messages.map((message) => (
-                          <tr key={message.id} style={{ cursor: 'pointer' }} onClick={() => void openMessage(message)}>
-                            <td><div><strong style={{ fontWeight: message.unread ? 700 : 500 }}>{message.from}</strong><span className="member-cell">{message.subject}{message.flagged ? ' · ★' : ''}</span></div></td>
+                          <tr key={message.id}>
+                            <td><button className="inbox-message-button" onClick={() => void openMessage(message)}><strong style={{ fontWeight: message.unread ? 700 : 500 }}>{message.from}</strong><span>{message.subject}{message.flagged ? ' · ★' : ''}</span></button></td>
                             <td>{formatDate(message.receivedAt)}</td>
                             <td>{formatSize(message.size)}</td>
                           </tr>

@@ -3,16 +3,49 @@ import { prisma } from '../../lib/prisma.js';
 export const createInvitation = (input: {
   organisationId: string; email: string; role: 'ADMIN' | 'STAFF'; tokenHash: string;
   inviterId: string; expiresAt: Date;
-}) => prisma.organizationInvitation.create({ data: input });
+}) => prisma.$transaction(async (tx) => {
+  const invitation = await tx.organizationInvitation.create({ data: input });
+  await tx.auditLog.create({
+    data: {
+      organisationId: input.organisationId,
+      actorId: input.inviterId,
+      action: 'INVITATION_CREATED',
+      resourceType: 'OrganizationInvitation',
+      resourceId: invitation.id,
+      metadata: { email: input.email, role: input.role },
+    },
+  });
+  return invitation;
+});
 
 export const findInvitationByTokenHash = (tokenHash: string) =>
   prisma.organizationInvitation.findUnique({ where: { tokenHash } });
 
-export const revokeInvitation = (organisationId: string, invitationId: string) =>
-  prisma.organizationInvitation.updateMany({
-    where: { id: invitationId, organisationId, acceptedAt: null, revokedAt: null },
+export const revokeInvitation = (input: {
+  organisationId: string; invitationId: string; actorId: string;
+}) => prisma.$transaction(async (tx) => {
+  const result = await tx.organizationInvitation.updateMany({
+    where: {
+      id: input.invitationId,
+      organisationId: input.organisationId,
+      acceptedAt: null,
+      revokedAt: null,
+    },
     data: { revokedAt: new Date() },
   });
+  if (result.count === 1) {
+    await tx.auditLog.create({
+      data: {
+        organisationId: input.organisationId,
+        actorId: input.actorId,
+        action: 'INVITATION_REVOKED',
+        resourceType: 'OrganizationInvitation',
+        resourceId: input.invitationId,
+      },
+    });
+  }
+  return result;
+});
 
 export const acceptInvitationTransaction = async (input: {
   invitationId: string; email: string; displayName: string; passwordHash: string;

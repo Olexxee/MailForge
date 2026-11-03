@@ -111,13 +111,25 @@ export const grantMailboxAccess = async (input: {
   await assertMailboxPermission(input.organisationId, input.mailboxId, input.actorId, 'ADMINISTER');
   const targetMembership = await findActiveMembership(input.organisationId, input.userId);
   if (!targetMembership) throw new AppError('TARGET_NOT_ACTIVE_MEMBER', 409, 'Access can only be granted to an active organisation member');
-  const grant = await upsertMailboxGrant({
-    organisationId: input.organisationId,
-    mailboxId: input.mailboxId,
-    userId: input.userId,
-    permission: input.permission,
-    grantedById: input.actorId,
-  });
+  let grant;
+  try {
+    grant = await upsertMailboxGrant({
+      organisationId: input.organisationId,
+      mailboxId: input.mailboxId,
+      userId: input.userId,
+      permission: input.permission,
+      grantedById: input.actorId,
+    });
+  } catch (error) {
+    if (error instanceof Error && error.message === 'MAILBOX_ADMIN_ACCESS_REVOKED') {
+      throw new AppError('MAILBOX_ACCESS_DENIED', 403, 'Mailbox administrator access is no longer active');
+    }
+    if (error && typeof error === 'object' && 'code' in error && error.code === 'P2034') {
+      throw new AppError('ACCESS_UPDATE_CONFLICT', 409, 'Mailbox membership or access changed concurrently. Reload and retry');
+    }
+    throw error;
+  }
+  if (!grant) throw new AppError('TARGET_NOT_ACTIVE_MEMBER', 409, 'Access can only be granted to an active organisation member');
   return { id: grant.id, permission: grant.permission, createdAt: grant.createdAt, user: grant.membership.user };
 };
 

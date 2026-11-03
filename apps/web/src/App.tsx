@@ -34,7 +34,8 @@ export default function App() {
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
-  const [inviteToken, setInviteToken] = useState(readInviteToken);\n  const [showInviteLogin, setShowInviteLogin] = useState(false);
+  const [inviteToken, setInviteToken] = useState(readInviteToken);
+  const [showInviteLogin, setShowInviteLogin] = useState(false);
   const [createdInvite, setCreatedInvite] = useState<InviteResult | null>(null);
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
@@ -270,7 +271,8 @@ export default function App() {
             {error && <p className="error-text">{error}</p>}
             <button className="primary-button" disabled={busy}>{busy ? 'Signing in…' : 'Sign in'}</button>
           </form>
-          {inviteToken && <p className="muted small-copy"><button className="text-button" onClick={() => setShowInviteLogin(false)}>Back to invitation</button></p>}\n          <p className="muted small-copy">Access is invitation-only. Public registration is disabled.</p>
+          {inviteToken && <p className="muted small-copy"><button className="text-button" onClick={() => setShowInviteLogin(false)}>Back to invitation</button></p>}
+          <p className="muted small-copy">Access is invitation-only. Public registration is disabled.</p>
         </section>
       </main>
     );

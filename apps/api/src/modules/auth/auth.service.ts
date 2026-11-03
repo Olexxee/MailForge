@@ -1,5 +1,5 @@
 import { AppError } from '../../app.js';
-import { createOpaqueToken, hashPassword, hashToken, verifyPassword } from '../../lib/crypto.js';
+import { createOpaqueToken, hashToken, verifyPassword } from '../../lib/crypto.js';
 import { createSession, findActiveSession, findUserByEmail, findUserById, revokeSession, rotateSession } from './auth.db.js';
 
 const SESSION_TTL_MS = 7 * 24 * 60 * 60 * 1000;
@@ -7,10 +7,8 @@ const SESSION_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 export const authenticateCredentials = async (email: string, password: string) => {
   const user = await findUserByEmail(email);
   // Run a password hash for unknown users as well, reducing account-enumeration timing differences.
-  const valid = user ? await verifyPassword(password, user.passwordHash) : await verifyPassword(
-    password,
-    'scrypt$32768$8$1$MDEyMzQ1Njc4OWFiY2RlZg$AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA',
-  );
+  const dummyHash = `scrypt$32768$8$1${Buffer.from('0123456789abcdef').toString('base64url')}${Buffer.alloc(64).toString('base64url')}`;
+  const valid = await verifyPassword(password, user?.passwordHash ?? dummyHash);
   if (!user || !valid || !user.isActive) throw new AppError('INVALID_CREDENTIALS', 401, 'Email or password is incorrect');
   return user;
 };

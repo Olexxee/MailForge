@@ -9,7 +9,7 @@ export const listMyOrganisations = async (_req: Request, res: Response) => {
 
 export const listOrganisationMembers = async (req: Request, res: Response) => {
   const auth = res.locals.auth as { userId: string };
-  const members = await getOrganisationMembers(req.params.organisationId!, auth.userId);
+  const members = await getOrganisationMembers(req.params.organisationId as string, auth.userId);
   res.json({ success: true, data: { members }, requestId: res.locals.requestId });
 };
 
@@ -19,7 +19,7 @@ export const updateOrganisationMember = async (req: Request, res: Response) => {
   const membership = await changeOrganisationMembership({
     organisationId: req.params.organisationId!,
     actorId: auth.userId,
-    targetUserId: req.params.userId!,
+    targetUserId: req.params.userId as string,
     ...body,
   });
   res.json({

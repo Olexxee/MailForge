@@ -22,7 +22,8 @@
     "dotenv": "^16.4.7",
     "express-rate-limit": "^7.5.0",
     "@prisma/client": "^6.1.0",
-    "@mailforge/provider-go54": "0.1.0"
+    "@mailforge/provider-go54": "0.1.0",
+    "sanitize-html": "^2.17.0"
   },
   "devDependencies": {
     "@types/cors": "^2.8.17",
@@ -31,6 +32,7 @@
     "tsx": "^4.19.2",
     "vitest": "^2.1.8",
     "supertest": "^7.0.0",
-    "@types/supertest": "^6.0.2"
+    "@types/supertest": "^6.0.2",
+    "@types/sanitize-html": "^2.16.0"
   }
 }

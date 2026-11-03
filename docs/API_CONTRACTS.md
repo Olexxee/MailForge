@@ -64,4 +64,9 @@ All endpoints below require an authenticated session and an active explicit mail
 
 Message bodies are not persisted in PostgreSQL. HTML is sanitised server-side using an explicit allow-list; active content, inline styles, forms, images, and scripts are not passed through. Message detail and folder/list responses are not cached by browsers or intermediaries.
 
-Current read scope is deliberately limited to folder listing, message pagination, and message detail. Attachment streaming, read/unread mutations, search, and mailbox sync remain subsequent increments and are not advertised as available capabilities yet.
+Additional Phase 3 endpoints:
+
+- `GET /api/v1/organisations/:organisationId/mailboxes/:mailboxId/folders/:folderId/messages/:messageId/attachments/:partId`: streams one authorised attachment as `application/octet-stream`, with a 10 MiB maximum, `Content-Disposition: attachment`, `nosniff`, and `no-store`. The stream holds its IMAP connection/lock only for the duration of transfer and releases it on completion or disconnect.
+- `PATCH /api/v1/organisations/:organisationId/mailboxes/:mailboxId/folders/:folderId/messages/:messageId/read-state` with `{ "unread": boolean }`: requires MANAGE or ADMINISTER permission and updates the provider's `\\Seen` flag. Opening a message does not automatically mark it read.
+
+Search, move/archive/trash/delete, drafts, and mailbox sync remain subsequent increments and are not advertised as available capabilities yet.

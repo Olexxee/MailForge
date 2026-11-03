@@ -39,7 +39,9 @@ describe('credential encryption', () => {
     process.env.CREDENTIAL_ENCRYPTION_KEYS_JSON = JSON.stringify({ 1: keyOne });
     process.env.CREDENTIAL_ENCRYPTION_ACTIVE_KEY_VERSION = '1';
     const encrypted = encryptCredential('secret');
-    expect(() => decryptCredential(encrypted.ciphertext.slice(0, -1) + 'x', 1))
+    const [version, iv, tag, data] = encrypted.ciphertext.split('.');
+    const changedTag = `${tag?.startsWith('A') ? 'B' : 'A'}${tag?.slice(1) ?? ''}`;
+    expect(() => decryptCredential(`${version}.${iv}.${changedTag}.${data}`, 1))
       .toThrow('CREDENTIAL_DECRYPTION_FAILED');
   });
 });

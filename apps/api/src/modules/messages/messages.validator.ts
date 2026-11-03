@@ -10,7 +10,7 @@ export const folderMessagesParamsSchema = mailboxMessagesParamsSchema.extend({
 });
 
 export const messageDetailParamsSchema = folderMessagesParamsSchema.extend({
-  messageUid: z.string().regex(/^[1-9][0-9]{0,14}$/).transform(Number),
+  messageId: z.string().min(1).max(512),
 });
 
 export const messagesQuerySchema = z.object({

@@ -46,8 +46,8 @@ export class FakeMailProvider implements MailProvider {
     };
   }
 
-  async getMessage(folderId: string, uid: number): Promise<ProviderMessageDetail | null> {
-    return this.messages.find((message) => message.folderId === folderId && message.id === String(uid)) ?? null;
+  async getMessage(folderId: string, messageId: string): Promise<ProviderMessageDetail | null> {
+    return this.messages.find((message) => message.folderId === folderId && message.id === messageId) ?? null;
   }
 
   seed(messages: ProviderMessageDetail[]): void {

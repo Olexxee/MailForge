@@ -1,5 +1,5 @@
 import type { Request, Response } from 'express';
-import { getCurrentUser, issueSession, revokeUserSession, rotateUserSession, authenticateCredentials } from './auth.service.js';
+import { getCurrentUser, issueSession, renewCsrfToken, revokeUserSession, rotateUserSession, authenticateCredentials } from './auth.service.js';
 
 const SESSION_COOKIE = 'mf_session';
 const CSRF_COOKIE = 'mf_csrf';
@@ -12,17 +12,22 @@ const cookieOptions = (maxAge?: number) => [
   ...(maxAge === undefined ? [] : [`Max-Age=${Math.floor(maxAge / 1000)}`]),
 ].join('; ');
 
+export const setCsrfCookie = (res: Response, csrfToken: string, expiresAt: Date) => {
+  const maxAge = Math.max(0, expiresAt.getTime() - Date.now());
+  const secure = isProduction() ? 'Secure; ' : '';
+  res.append('Set-Cookie', `${CSRF_COOKIE}=${encodeURIComponent(csrfToken)}; Path=/api/v1; SameSite=Lax; ${secure}Max-Age=${Math.floor(maxAge / 1000)}`);
+};
+
 export const setSessionCookies = (res: Response, sessionToken: string, csrfToken: string, expiresAt: Date) => {
   const maxAge = expiresAt.getTime() - Date.now();
   res.append('Set-Cookie', `${SESSION_COOKIE}=${encodeURIComponent(sessionToken)}; ${cookieOptions(maxAge)}`);
-  const csrfAttributes = isProduction() ? 'SameSite=Lax; Secure;' : 'SameSite=Lax;';
-  res.append('Set-Cookie', `${CSRF_COOKIE}=${encodeURIComponent(csrfToken)}; Path=/api/v1; ${csrfAttributes} Max-Age=${Math.floor(maxAge / 1000)}`);
+  setCsrfCookie(res, csrfToken, expiresAt);
 };
 
 export const clearSessionCookies = (res: Response) => {
   res.append('Set-Cookie', `${SESSION_COOKIE}=; ${cookieOptions(0)}`);
-  const csrfAttributes = isProduction() ? 'SameSite=Lax; Secure;' : 'SameSite=Lax;';
-  res.append('Set-Cookie', `${CSRF_COOKIE}=; Path=/api/v1; ${csrfAttributes} Max-Age=0`);
+  const secure = isProduction() ? 'Secure; ' : '';
+  res.append('Set-Cookie', `${CSRF_COOKIE}=; Path=/api/v1; SameSite=Lax; ${secure}Max-Age=0`);
 };
 
 const userPayload = (user: Awaited<ReturnType<typeof getCurrentUser>>) => ({
@@ -42,6 +47,13 @@ export const login = async (req: Request, res: Response) => {
   const session = await issueSession(user.id);
   setSessionCookies(res, session.sessionToken, session.csrfToken, session.expiresAt);
   res.status(200).json({ success: true, data: { user: userPayload(user), csrfToken: session.csrfToken }, requestId: res.locals.requestId });
+};
+
+export const renewCsrf = async (_req: Request, res: Response) => {
+  const auth = res.locals.auth as { sessionId: string; expiresAt: Date };
+  const csrfToken = await renewCsrfToken(auth.sessionId);
+  setCsrfCookie(res, csrfToken, auth.expiresAt);
+  res.json({ success: true, data: { csrfToken }, requestId: res.locals.requestId });
 };
 
 export const me = async (_req: Request, res: Response) => {
@@ -64,4 +76,3 @@ export const refresh = async (_req: Request, res: Response) => {
   const user = await getCurrentUser(auth.userId);
   res.json({ success: true, data: { user: userPayload(user), csrfToken: session.csrfToken }, requestId: res.locals.requestId });
 };
-

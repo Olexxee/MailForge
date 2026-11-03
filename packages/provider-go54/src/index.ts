@@ -1,6 +1,6 @@
 import { ImapFlow } from 'imapflow';
 import nodemailer from 'nodemailer';
-import { ProviderCapabilityError, type MailProvider, type ProviderHealth } from '@mailforge/provider-core';
+import { ProviderCapabilityError, type MailProvider, type ProviderCapability, type ProviderHealth } from '@mailforge/provider-core';
 
 export const GO54_PROVIDER_ID = 'go54' as const;
 export const GO54_IMAP_HOST = 'imap.go54mail.com';
@@ -77,9 +77,9 @@ export class Go54Provider implements MailProvider {
     };
   }
 
-  capabilities() {
+  capabilities(): ReadonlySet<ProviderCapability> {
     // Message operations are added in Phase 3/4 after provider behaviour is verified.
-    return new Set() as ReadonlySet<never>;
+    return new Set<ProviderCapability>();
   }
 
   async checkHealth(): Promise<ProviderHealth> {

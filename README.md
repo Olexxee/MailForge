@@ -2,7 +2,7 @@
 
 Private, multi-domain email management for an organisation.
 
-**Current status:** Phase 0 foundation and CI verification are merged. Phase 1 authentication and organisation access are being implemented on `feat/phase-1-auth-organisation`; this phase is not complete until its migration, tests, and security checks pass in CI. Dependency lockfile and npm audit findings remain Phase 0 hardening items.
+**Current status:** Phase 0 foundation and CI verification are merged. Phase 1 backend authentication and organisation access are merged. The admin workspace UI is being implemented on `feat/phase-1-admin-workspace`; Phase 1 is not complete until the UI and full acceptance checks pass in CI. Dependency lockfile and npm audit findings remain Phase 0 hardening items.
 
 MailForge connects existing email providers and gives authorised staff one unified webmail and administration interface. It is not an email host and will not operate its own mail server.
 

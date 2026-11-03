@@ -1,6 +1,6 @@
 import type { Request, Response } from 'express';
-import { AppError } from '../../app.js';
-import { getCurrentUser, issueSession, revokeUserSession, rotateUserSession, authenticateCredentials } from './auth.service.js';
+import { AppError } from '../../lib/http.js';
+import { getCurrentUser, issueSession, revokeUserSession, rotateUserSession, authenticateCredentials } from './auth.service.js';\nimport { readCookie } from '../../lib/cookies.js';
 
 const SESSION_COOKIE = 'mf_session';
 const CSRF_COOKIE = 'mf_csrf';

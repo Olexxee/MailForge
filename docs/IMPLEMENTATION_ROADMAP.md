@@ -75,8 +75,8 @@ Keep all five files together inside each feature directory. Do not create global
 - [x] Build the responsive inbox UI against the read endpoints.
 - [x] Add fake-provider pagination contract tests and server-side HTML sanitisation tests.
 - [ ] Add GO54 adapter tests for UID pagination, UIDVALIDITY changes, body bounds, and safe failure mapping.
-- [ ] Implement authorised, bounded attachment streaming as a separately tested increment.
-- [ ] Add read/unread mutation only after permission and provider semantics are defined.
+- [x] Implement authorised attachment streaming with a 10 MiB cap and safe download headers.
+- [x] Add read/unread mutation using IMAP `\\Seen`, gated by MANAGE or ADMINISTER grants; opening a message does not mutate state.
 - [ ] Add sync checkpoints only where required; preserve UIDVALIDITY correctness.
 
 **Exit criteria:** authorised users can list folders and read messages; cross-mailbox access is denied; content/attachments are bounded; unsafe HTML is neutralised; provider failures are safely mapped. Live GO54 validation remains a separate operational check and is not required for deterministic CI.

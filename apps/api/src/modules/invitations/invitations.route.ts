@@ -10,7 +10,7 @@ import {
 } from './invitations.controller.js';
 import { acceptInvitationSchema, createInvitationSchema } from './invitations.validator.js';
 
-export const invitationsRouter = Router();
+export const invitationsRouter = Router();\ninvitationsRouter.use((_req, res, next) => { res.setHeader('Cache-Control', 'no-store'); next(); });
 invitationsRouter.post(
   '/invitations/accept-existing',
   requireAuth,

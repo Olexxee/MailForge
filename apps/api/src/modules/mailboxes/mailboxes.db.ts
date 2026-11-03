@@ -125,6 +125,26 @@ export const upsertMailboxGrant = (input: {
   permission: 'READ' | 'SEND' | 'MANAGE' | 'ADMINISTER';
   grantedById: string;
 }) => prisma.$transaction(async (tx) => {
+  const [actorMembership, actorGrant, targetMembership] = await Promise.all([
+    tx.organizationMembership.findFirst({
+      where: { organisationId: input.organisationId, userId: input.grantedById, isActive: true, user: { isActive: true } },
+      select: { id: true },
+    }),
+    tx.mailboxAccess.findUnique({
+      where: { mailboxId_userId: { mailboxId: input.mailboxId, userId: input.grantedById } },
+      select: { permission: true, revokedAt: true, organisationId: true },
+    }),
+    tx.organizationMembership.findFirst({
+      where: { organisationId: input.organisationId, userId: input.userId, isActive: true, user: { isActive: true } },
+      select: { id: true },
+    }),
+  ]);
+  if (!actorMembership || !actorGrant || actorGrant.organisationId !== input.organisationId ||
+      actorGrant.revokedAt || actorGrant.permission !== 'ADMINISTER') {
+    throw new Error('MAILBOX_ADMIN_ACCESS_REVOKED');
+  }
+  if (!targetMembership) return null;
+
   const grant = await tx.mailboxAccess.upsert({
     where: { mailboxId_userId: { mailboxId: input.mailboxId, userId: input.userId } },
     create: {
@@ -135,7 +155,12 @@ export const upsertMailboxGrant = (input: {
       grantedById: input.grantedById,
     },
     update: { permission: input.permission, grantedById: input.grantedById, revokedAt: null },
-    select: { id: true, permission: true, createdAt: true, membership: { select: { user: { select: { id: true, email: true, displayName: true } } } } },
+    select: {
+      id: true,
+      permission: true,
+      createdAt: true,
+      membership: { select: { user: { select: { id: true, email: true, displayName: true } } } },
+    },
   });
   await tx.auditLog.create({
     data: {
@@ -148,7 +173,7 @@ export const upsertMailboxGrant = (input: {
     },
   });
   return grant;
-});
+}, { isolationLevel: 'Serializable' });
 
 export const revokeMailboxGrant = (input: {
   organisationId: string;

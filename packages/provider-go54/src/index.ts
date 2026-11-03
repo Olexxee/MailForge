@@ -481,16 +481,20 @@ export class Go54Provider implements MailProvider {
 
       const result = await client.download(identifier.uid, partId, {
         uid: true,
-        maxBytes,
+        maxBytes: maxBytes + 1,
         chunkSize: 64 * 1024,
       });
       if (!result.content) return null;
 
       const content = result.content;
       const stream = (async function* (): AsyncGenerator<Uint8Array> {
+        let total = 0;
         try {
           for await (const chunk of content) {
-            yield Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk);
+            const buffer = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk);
+            total += buffer.length;
+            if (total > maxBytes) throw codedError('ATTACHMENT_TOO_LARGE');
+            yield buffer;
           }
         } finally {
           lock?.release();

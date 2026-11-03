@@ -49,6 +49,11 @@ export default function App() {
     [organisations, organisationId],
   );
   const canManage = currentOrganisation?.role === 'OWNER' || currentOrganisation?.role === 'ADMIN';
+  const activeMemberCount = members.filter((member) => member.isActive).length;
+
+  useEffect(() => {
+    if (currentOrganisation?.role !== 'OWNER' && inviteRole === 'ADMIN') setInviteRole('STAFF');
+  }, [currentOrganisation?.role, inviteRole]);
 
   const loadWorkspace = useCallback(async (activeUser: User) => {
     setUser(activeUser);
@@ -73,12 +78,13 @@ export default function App() {
       setMembers([]);
       setInvitations([]);
     }
-  }, [organisationId]);
+  }, []);
 
   const reloadOrganisation = useCallback(async (id: string) => {
     const selected = organisations.find((item) => item.id === id);
     setOrganisationId(id);
     if (!selected || (selected.role !== 'OWNER' && selected.role !== 'ADMIN')) {
+      setPage('members');
       setMembers([]);
       setInvitations([]);
       return;
@@ -166,16 +172,20 @@ export default function App() {
 
   const handleLogout = async () => {
     setBusy(true);
+    setError('');
     try {
       await apiRequest('/auth/logout', { method: 'POST' });
-    } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Sign out failed.');
-    } finally {
       setCsrfToken(undefined);
       setUser(null);
       setOrganisations([]);
+      setOrganisationId('');
       setMembers([]);
       setInvitations([]);
+      setCreatedInvite(null);
+      setPage('members');
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Sign out failed.');
+    } finally {
       setBusy(false);
     }
   };
@@ -342,7 +352,7 @@ export default function App() {
               </div>
               {canManage ? (
                 <section className="panel">
-                  <div className="panel-heading"><div><h2>Organisation members</h2><p>{members.length} active member{members.length === 1 ? '' : 's'}</p></div><span className="panel-tag">ACCESS CONTROL</span></div>
+                  <div className="panel-heading"><div><h2>Organisation members</h2><p>{activeMemberCount} active member{activeMemberCount === 1 ? '' : 's'} · {members.length} total</p></div><span className="panel-tag">ACCESS CONTROL</span></div>
                   <div className="table-scroll">
                     <table>
                       <thead><tr><th>Member</th><th>Role</th><th>Status</th><th className="actions-col">Manage</th></tr></thead>

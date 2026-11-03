@@ -37,21 +37,11 @@ export const requireCsrf: RequestHandler = (req, res, next) => {
   }
   const cookieToken = readCookie(req.headers.cookie, 'mf_csrf');
   const headerToken = req.header('x-csrf-token');
-  if (!auth || !cookieToken || !headerToken || !safeEqual(cookieToken, headerToken) ||
+  if (!auth || !cookieToken || !headerToken ||
+      !safeEqual(cookieToken, headerToken) ||
       !safeEqual(hashToken(cookieToken), auth.csrfTokenHash)) {
     next(new AppError('CSRF_INVALID', 403, 'CSRF validation failed'));
     return;
   }
   next();
 };
-
-export const requireRoles = (...roles: Array<'OWNER' | 'ADMIN' | 'STAFF'>): RequestHandler =>
-  (_req, res, next) => {
-    const userId = (res.locals.auth as { userId: string } | undefined)?.userId;
-    const memberships = (res.locals.auth as { memberships?: Array<{ role: string }> } | undefined)?.memberships;
-    if (!userId || !memberships?.some((membership) => roles.includes(membership.role as 'OWNER' | 'ADMIN' | 'STAFF'))) {
-      next(new AppError('ACCESS_DENIED', 403, 'You do not have permission to perform this action'));
-      return;
-    }
-    next();
-  };

@@ -23,6 +23,18 @@ export const requireAuth: RequestHandler = async (req, res, next) => {
 
 export const requireCsrf: RequestHandler = (req, res, next) => {
   const auth = res.locals.auth as { csrfTokenHash: string } | undefined;
+  const origin = req.header('origin');
+  if (origin) {
+    try {
+      if (new URL(origin).origin !== new URL(process.env.WEB_ORIGIN ?? 'http://localhost:5173').origin) {
+        next(new AppError('CSRF_INVALID', 403, 'CSRF validation failed'));
+        return;
+      }
+    } catch {
+      next(new AppError('CSRF_INVALID', 403, 'CSRF validation failed'));
+      return;
+    }
+  }
   const cookieToken = readCookie(req.headers.cookie, 'mf_csrf');
   const headerToken = req.header('x-csrf-token');
   if (!auth || !cookieToken || !headerToken || !safeEqual(cookieToken, headerToken) ||

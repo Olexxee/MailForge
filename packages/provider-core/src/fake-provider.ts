@@ -49,7 +49,17 @@ export class FakeMailProvider implements MailProvider {
     return this.messages.find((message) => message.folderId === folderId && message.id === messageId) ?? null;
   }
 
-  async downloadAttachment(): Promise<null> {\n    return null;\n  }\n\n  async setMessageSeen(folderId: string, messageId: string, seen: boolean): Promise<void> {\n    const message = this.messages.find((item) => item.folderId === folderId && item.id === messageId);\n    if (!message) throw new Error('MESSAGE_NOT_FOUND');\n    message.unread = !seen;\n  }\n\n  seed(messages: ProviderMessageDetail[]): void {
+  async downloadAttachment(): Promise<null> {
+    return null;
+  }
+
+  async setMessageSeen(folderId: string, messageId: string, seen: boolean): Promise<void> {
+    const message = this.messages.find((item) => item.folderId === folderId && item.id === messageId);
+    if (!message) throw new Error('MESSAGE_NOT_FOUND');
+    message.unread = !seen;
+  }
+
+  seed(messages: ProviderMessageDetail[]): void {
     this.messages.push(...messages);
   }
 }

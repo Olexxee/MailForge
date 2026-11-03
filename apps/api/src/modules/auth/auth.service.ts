@@ -2,7 +2,7 @@ import { AppError } from '../../app.js';
 import { createOpaqueToken, hashToken, verifyPassword } from '../../lib/crypto.js';
 import { createSession, findActiveSession, findUserByEmail, findUserById, revokeSession, rotateSession } from './auth.db.js';
 
-const SESSION_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+const SESSION_TTL_MS = 7 * 24 * 60 * 60 * 1000;\nconst ABSOLUTE_SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 
 export const authenticateCredentials = async (email: string, password: string) => {
   const user = await findUserByEmail(email);
@@ -34,7 +34,7 @@ export const issueSession = async (userId: string) => {
 
 export const getSession = (token: string) => findActiveSession(hashToken(token));
 
-export const rotateUserSession = async (sessionId: string, userId: string) => {
+export const rotateUserSession = async (sessionId: string, userId: string, absoluteExpiresAt: Date) => {
   const sessionToken = createOpaqueToken();
   const csrfToken = createOpaqueToken(24);
   const expiresAt = new Date(Date.now() + SESSION_TTL_MS);

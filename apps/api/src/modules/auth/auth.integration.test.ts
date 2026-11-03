@@ -66,8 +66,12 @@ describe('Phase 1 authentication and organisation workflows', () => {
   });
 
   afterAll(async () => {
-    await prisma.organisation.deleteMany({ where: { id: { in: organisationIds } } });
-    await prisma.user.deleteMany({ where: { id: { in: userIds } } });
+    try {
+      await prisma.organisation.deleteMany({ where: { id: { in: organisationIds } } });
+      await prisma.user.deleteMany({ where: { id: { in: userIds } } });
+    } finally {
+      await prisma.$disconnect();
+    }
   });
 
   it('denies staff access and blocks cross-organisation membership reads', async () => {
@@ -92,6 +96,10 @@ describe('Phase 1 authentication and organisation workflows', () => {
       organisationId, actorId: ownerId, targetUserId: staffId, role: 'ADMIN',
     });
     expect(updated.role).toBe('ADMIN');
+    await changeOrganisationMembership({ organisationId, actorId: ownerId, targetUserId: staffId, isActive: false });
+    const listedInactive = await getOrganisationMembers(organisationId, ownerId);
+    expect(listedInactive.find((item) => item.userId === staffId)?.isActive).toBe(false);
+    await changeOrganisationMembership({ organisationId, actorId: ownerId, targetUserId: staffId, isActive: true });
 
     await expect(changeOrganisationMembership({
       organisationId, actorId: ownerId, targetUserId: ownerId, isActive: false,

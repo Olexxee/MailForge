@@ -49,6 +49,9 @@ describe('FakeMailProvider', () => {
     expect(second.messages).toHaveLength(1);
     await expect(provider.getMessage('inbox', '3')).resolves.toMatchObject({ subject: 'C' });
     await expect(provider.getMessage('sent', '3')).resolves.toBeNull();
+    await provider.setMessageSeen('inbox', '3', true);
+    await expect(provider.getMessage('inbox', '3')).resolves.toMatchObject({ unread: false });
+    await expect(provider.downloadAttachment('inbox', '3', '1', 1024)).resolves.toBeNull();
   });
 
   it('rejects invalid page sizes and cursors', async () => {

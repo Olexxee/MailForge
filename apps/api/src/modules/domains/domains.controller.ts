@@ -1,5 +1,5 @@
 import type { Request, Response } from 'express';
-import { addOrganisationDomain, getOrganisationDomains, verifyOrganisationDomain } from './domains.service.js';
+import { addOrganisationDomain, getOrganisationDomains, rotateOrganisationDomainChallenge, verifyOrganisationDomain } from './domains.service.js';
 
 export const listDomains = async (req: Request, res: Response) => {
   const auth = res.locals.auth as { userId: string };
@@ -25,4 +25,14 @@ export const verifyDomain = async (req: Request, res: Response) => {
     domainId: req.params.domainId as string,
   });
   res.json({ success: true, data: { domain }, requestId: res.locals.requestId });
+};
+
+export const rotateDomainChallenge = async (req: Request, res: Response) => {
+  const auth = res.locals.auth as { userId: string };
+  const result = await rotateOrganisationDomainChallenge({
+    organisationId: req.params.organisationId as string,
+    actorId: auth.userId,
+    domainId: req.params.domainId as string,
+  });
+  res.json({ success: true, data: result, requestId: res.locals.requestId });
 };

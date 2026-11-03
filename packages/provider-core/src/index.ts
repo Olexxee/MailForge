@@ -17,20 +17,57 @@ export interface ProviderHealth {
   smtpErrorCode?: string;
 }
 
+export interface ProviderFolder {
+  id: string;
+  name: string;
+  specialUse?: string;
+  messageCount?: number;
+  unseenCount?: number;
+}
+
 export interface ProviderMessageSummary {
   id: string;
   folderId: string;
   subject: string;
   from: string;
+  to: string[];
   receivedAt: Date;
   unread: boolean;
+  flagged: boolean;
+  size: number;
+}
+
+export interface ProviderMessagePage {
+  messages: ProviderMessageSummary[];
+  nextCursor: string | null;
+  uidValidity: string;
+}
+
+export interface ProviderAttachmentSummary {
+  partId: string;
+  filename: string;
+  contentType: string;
+  size: number;
+}
+
+export interface ProviderMessageDetail extends ProviderMessageSummary {
+  cc: string[];
+  text: string;
+  html: string | null;
+  bodyTruncated: boolean;
+  attachments: ProviderAttachmentSummary[];
 }
 
 export interface MailProvider {
   readonly providerId: string;
   capabilities(): ReadonlySet<ProviderCapability>;
   checkHealth(): Promise<ProviderHealth>;
-  listMessages(folderId: string, limit: number): Promise<ProviderMessageSummary[]>;
+  listFolders(): Promise<ProviderFolder[]>;
+  listMessages(
+    folderId: string,
+    options: { limit: number; cursor?: string },
+  ): Promise<ProviderMessagePage>;
+  getMessage(folderId: string, uid: number): Promise<ProviderMessageDetail | null>;
 }
 
 export class ProviderCapabilityError extends Error {

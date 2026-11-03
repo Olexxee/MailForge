@@ -2,7 +2,7 @@
 
 Private, multi-domain email management for an organisation.
 
-**Current status:** Phase 0 foundation and Phase 1 authentication/admin workspace are merged and verified. Phase 2 domain verification, encrypted GO54 connections, mailbox registration, and explicit mailbox grants are being implemented on `feat/phase-2-domains-go54-mailboxes`. Dependency lockfile and npm audit findings remain hardening items.
+**Current status:** Phase 0, Phase 1, and the Phase 2 domain/GO54/mailbox implementation are merged. Phase 3 read-only inbox API and GO54 IMAP folder/message retrieval are in progress on `feat/phase-3-inbox-reading`. Live GO54 protocol validation remains unperformed. Dependency lockfile and npm audit findings remain hardening items.
 
 MailForge connects existing email providers and gives authorised staff one unified webmail and administration interface. It is not an email host and will not operate its own mail server.
 
@@ -315,8 +315,8 @@ An authorised staff member signs in, opens the GO54 mailbox, reads a message, an
 - [x] Phase sequence and foundation requirements defined
 - [x] Phase 0 initial implementation and CI baseline (dependency reproducibility/security audit follow-up remains)
 - [x] Phase 1 authentication and organisation access
-- [ ] Phase 2 GO54 provider/mailboxes (implementation in progress on `feat/phase-2-domains-go54-mailboxes`)
-- [ ] Phase 3 inbox and reading
+- [x] Phase 2 domains, GO54 provider configuration, mailbox registration and explicit grants (live protocol validation remains pending)
+- [ ] Phase 3 inbox and reading (read-only API and provider adapter implemented; UI/tests/attachments remain)
 - [ ] Phase 4 compose and sending
 - [ ] Phase 5 productivity
 - [ ] Phase 6 additional providers

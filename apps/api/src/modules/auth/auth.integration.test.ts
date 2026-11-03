@@ -192,6 +192,17 @@ describe('Phase 1 authentication and organisation workflows', () => {
     })).rejects.toMatchObject({ code: 'INVITATION_INVALID' });
   });
 
+  it('extends idle session expiry without crossing the absolute lifetime', async () => {
+    const issued = await issueSession(ownerId);
+    const sessionHash = hashToken(issued.sessionToken);
+    const nearExpiry = new Date(Date.now() + 12 * 60 * 60 * 1000);
+    await prisma.session.update({ where: { tokenHash: sessionHash }, data: { expiresAt: nearExpiry } });
+    const active = await getSession(issued.sessionToken);
+    expect(active?.expiresAt.getTime()).toBeGreaterThan(nearExpiry.getTime());
+    expect(active?.expiresAt.getTime()).toBeLessThanOrEqual(issued.absoluteExpiresAt.getTime());
+    await revokeUserSession(active!.id);
+  });
+
   it('rotates sessions atomically and rejects revoked tokens', async () => {
     const initial = await issueSession(ownerId);
     const initialRecord = await getSession(initial.sessionToken);

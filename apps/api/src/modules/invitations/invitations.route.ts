@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { z } from 'zod';
-import { asyncWrapper, createRateLimiter, validateBody } from '../../app.js';
+import { asyncWrapper, createRateLimiter, validateBody } from '../../lib/http.js';
 import { requireAuth, requireCsrf } from '../auth/auth.middleware.js';
 import {
   acceptExistingOrganisationInvitation,

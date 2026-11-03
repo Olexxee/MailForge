@@ -17,7 +17,7 @@ export const validateProviderConnection = async (input: {
 
   let credentials: { password: string };
   try {
-    const plaintext = decryptCredential(connection.encryptedCredentials, connection.credentialKeyVersion);
+    const plaintext = decryptCredential(connection.encryptedCredentials, connection.credentialKeyVersion, `${input.organisationId}:${connection.accountEmail}`);
     const parsed: unknown = JSON.parse(plaintext);
     if (!parsed || typeof parsed !== 'object' || !('password' in parsed) || typeof parsed.password !== 'string') {
       throw new Error('invalid credential payload');

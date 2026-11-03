@@ -38,7 +38,7 @@ export const changeOrganisationMembership = async (input: {
   if (actor.role === 'ADMIN' && (target.role !== 'STAFF' || input.role === 'ADMIN')) {
     throw new AppError('ACCESS_DENIED', 403, 'Administrators may manage staff members only');
   }
-  const updated = await updateMembership(input);
+  const updated = await updateMembership({\n    organisationId: input.organisationId,\n    userId: input.targetUserId,\n    actorId: input.actorId,\n    ...(input.role === undefined ? {} : { role: input.role }),\n    ...(input.isActive === undefined ? {} : { isActive: input.isActive }),\n  });
   if (!updated) throw new AppError('MEMBERSHIP_NOT_FOUND', 404, 'Organisation membership was not found');
   return updated;
 };

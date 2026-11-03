@@ -13,7 +13,7 @@ export class FakeMailProvider implements MailProvider {
   ];
 
   capabilities() {
-    return new Set(['listFolders', 'listMessages', 'readMessage'] as const);
+    return new Set(['listFolders', 'listMessages', 'readMessage', 'mutateFlags'] as const);
   }
 
   async checkHealth(): Promise<ProviderHealth> {
@@ -49,7 +49,7 @@ export class FakeMailProvider implements MailProvider {
     return this.messages.find((message) => message.folderId === folderId && message.id === messageId) ?? null;
   }
 
-  seed(messages: ProviderMessageDetail[]): void {
+  async downloadAttachment(): Promise<null> {\n    return null;\n  }\n\n  async setMessageSeen(folderId: string, messageId: string, seen: boolean): Promise<void> {\n    const message = this.messages.find((item) => item.folderId === folderId && item.id === messageId);\n    if (!message) throw new Error('MESSAGE_NOT_FOUND');\n    message.unread = !seen;\n  }\n\n  seed(messages: ProviderMessageDetail[]): void {
     this.messages.push(...messages);
   }
 }

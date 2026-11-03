@@ -52,7 +52,7 @@ export const connectGo54Mailbox = async (input: {
   }
   let encrypted: { ciphertext: string; keyVersion: number };
   try {
-    encrypted = encryptCredential(JSON.stringify({ password: input.password }));
+    encrypted = encryptCredential(JSON.stringify({ password: input.password }), `${input.organisationId}:${email}`);
   } catch {
     throw new AppError(
       'CREDENTIAL_ENCRYPTION_UNAVAILABLE',

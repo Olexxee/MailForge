@@ -51,7 +51,7 @@ const requestContext: RequestHandler = (_req, res, next) => {
 };
 
 const notFound: RequestHandler = (req, _res, next) =>
-  next(new AppError('ROUTE_NOT_FOUND', 404, 'Route ' + req.method + ' ' + req.path + ' was not found));
+  next(new AppError('ROUTE_NOT_FOUND', 404, `Route ${req.method} ${req.path} was not found`));
 
 export const errorHandler: ErrorRequestHandler = (error: unknown, _req, res) => {
   const requestId = (res.locals.requestId as string | undefined) ?? 'unknown';

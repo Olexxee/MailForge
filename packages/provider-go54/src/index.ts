@@ -1,7 +1,6 @@
 import { ImapFlow } from 'imapflow';
 import nodemailer from 'nodemailer';
 import {
-  ProviderCapabilityError,
   type MailProvider,
   type ProviderAttachmentSummary,
   type ProviderCapability,
@@ -388,9 +387,5 @@ export class Go54Provider implements MailProvider {
         lock.release();
       }
     });
-  }
-
-  async listMessagesLegacy(): Promise<never> {
-    throw new ProviderCapabilityError('listMessages');
   }
 }

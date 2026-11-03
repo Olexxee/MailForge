@@ -66,3 +66,14 @@ export const updateSessionCsrfHash = (sessionId: string, csrfTokenHash: string, 
     },
     data: { csrfTokenHash },
   });
+
+export const extendSessionExpiry = (sessionId: string, expiresAt: Date, now = new Date()) =>
+  prisma.session.updateMany({
+    where: {
+      id: sessionId,
+      revokedAt: null,
+      expiresAt: { gt: now },
+      absoluteExpiresAt: { gt: now },
+    },
+    data: { expiresAt },
+  });

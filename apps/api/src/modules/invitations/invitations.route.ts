@@ -10,7 +10,11 @@ import {
 } from './invitations.controller.js';
 import { acceptInvitationSchema, createInvitationSchema } from './invitations.validator.js';
 
-export const invitationsRouter = Router();\ninvitationsRouter.use((_req, res, next) => { res.setHeader('Cache-Control', 'no-store'); next(); });
+export const invitationsRouter = Router();
+invitationsRouter.use((_req, res, next) => {
+  res.setHeader('Cache-Control', 'no-store');
+  next();
+});
 invitationsRouter.post(
   '/invitations/accept-existing',
   requireAuth,
@@ -28,6 +32,7 @@ invitationsRouter.post(
   '/organisations/:organisationId/invitations',
   requireAuth,
   requireCsrf,
+  createRateLimiter(10),
   validateBody(createInvitationSchema),
   asyncWrapper(createOrganisationInvitation),
 );

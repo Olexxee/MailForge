@@ -1,27 +1,100 @@
 generator client {
- provider = "prisma-client-js"
+  provider = "prisma-client-js"
 }
+
 datasource db {
- provider = "postgresql"
- url = env("DATABASE_URL")
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
+
+enum MembershipRole {
+  OWNER
+  ADMIN
+  STAFF
+}
+
 model User {
- id String @id @default(cuid())
- email String @unique
- passwordHash String
- displayName String
- isActive Boolean @default(true)
- sessions Session[]
- createdAt DateTime @default(now())
- updatedAt DateTime @updatedAt
+  id                String                    @id @default(cuid())
+  email             String                    @unique
+  passwordHash      String
+  displayName       String
+  isActive          Boolean                   @default(true)
+  sessions          Session[]
+  memberships       OrganizationMembership[]
+  createdInvitations OrganizationInvitation[] @relation("InvitationInviter")
+  auditEvents       AuditLog[]                @relation("AuditActor")
+  createdAt         DateTime                  @default(now())
+  updatedAt         DateTime                  @updatedAt
 }
+
 model Session {
- id String @id @default(cuid())
- tokenHash String @unique
- userId String
- user User @relation(fields:[userId],references:[id],onDelete:Cascade)
- expiresAt DateTime
- revokedAt DateTime?
- createdAt DateTime @default(now())
- @@index([userId,expiresAt])
+  id            String   @id @default(cuid())
+  tokenHash     String   @unique
+  csrfTokenHash String
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt     DateTime
+  revokedAt     DateTime?
+  createdAt     DateTime @default(now())
+
+  @@index([userId, expiresAt])
+}
+
+model Organisation {
+  id          String                    @id @default(cuid())
+  name        String
+  slug        String                    @unique
+  memberships OrganizationMembership[]
+  invitations OrganizationInvitation[]
+  auditLogs   AuditLog[]
+  createdAt   DateTime                  @default(now())
+  updatedAt   DateTime                  @updatedAt
+}
+
+model OrganizationMembership {
+  id             String         @id @default(cuid())
+  organisationId String
+  userId         String
+  role           MembershipRole @default(STAFF)
+  isActive       Boolean        @default(true)
+  organisation   Organisation   @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+  user           User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  @@unique([organisationId, userId])
+  @@index([userId, isActive])
+}
+
+model OrganizationInvitation {
+  id             String         @id @default(cuid())
+  organisationId String
+  email          String
+  role           MembershipRole
+  tokenHash      String         @unique
+  inviterId      String
+  expiresAt      DateTime
+  acceptedAt     DateTime?
+  revokedAt      DateTime?
+  organisation   Organisation   @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+  inviter        User           @relation("InvitationInviter", fields: [inviterId], references: [id], onDelete: Restrict)
+  createdAt      DateTime       @default(now())
+
+  @@index([organisationId, email, expiresAt])
+}
+
+model AuditLog {
+  id             String       @id @default(cuid())
+  organisationId String
+  actorId        String?
+  action         String
+  resourceType   String
+  resourceId     String?
+  metadata       Json?
+  organisation   Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+  actor          User?        @relation("AuditActor", fields: [actorId], references: [id], onDelete: SetNull)
+  createdAt      DateTime     @default(now())
+
+  @@index([organisationId, createdAt])
+  @@index([actorId, createdAt])
 }

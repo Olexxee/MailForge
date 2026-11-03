@@ -50,6 +50,7 @@ ALTER TABLE "Session" ADD COLUMN "csrfTokenHash" TEXT NOT NULL DEFAULT '';
 ALTER TABLE "Session" ALTER COLUMN "csrfTokenHash" DROP DEFAULT;
 ALTER TABLE "Session" ADD COLUMN "absoluteExpiresAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP;
 ALTER TABLE "Session" ALTER COLUMN "absoluteExpiresAt" DROP DEFAULT;
+UPDATE "Session" SET "revokedAt" = CURRENT_TIMESTAMP WHERE "revokedAt" IS NULL;
 
 CREATE UNIQUE INDEX "Organisation_slug_key" ON "Organisation"("slug");
 CREATE UNIQUE INDEX "OrganizationMembership_organisationId_userId_key" ON "OrganizationMembership"("organisationId", "userId");

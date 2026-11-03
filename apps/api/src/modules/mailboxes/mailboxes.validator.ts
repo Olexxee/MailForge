@@ -11,3 +11,18 @@ export const grantMailboxAccessSchema = z.object({
   userId: z.string().cuid(),
   permission: z.enum(['READ', 'SEND', 'MANAGE', 'ADMINISTER']),
 }).strict();
+
+export const organisationMailboxParamsSchema = z.object({
+  organisationId: z.string().cuid(),
+});
+
+export const mailboxParamsSchema = z.object({
+  organisationId: z.string().cuid(),
+  mailboxId: z.string().cuid(),
+});
+
+export const mailboxAccessParamsSchema = z.object({
+  organisationId: z.string().cuid(),
+  mailboxId: z.string().cuid(),
+  userId: z.string().cuid(),
+});

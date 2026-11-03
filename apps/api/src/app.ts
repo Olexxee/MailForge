@@ -74,7 +74,7 @@ export const errorHandler: ErrorRequestHandler = (error: unknown, _req, res, nex
   });
 };
 
-export const app = express();
+export const app = express();\nif (env.NODE_ENV === 'production') app.set('trust proxy', 1);
 app.disable('x-powered-by');
 app.use(requestContext);
 app.use(pinoHttp({ logger }));

@@ -54,6 +54,11 @@ interface PageCursor {
   beforeUid: number;
 }
 
+interface MessageIdentifier {
+  uidValidity: string;
+  uid: number;
+}
+
 const MAX_PAGE_SIZE = 50;
 const UID_SCAN_WINDOW = 10_000;
 const MAX_BODY_PART_BYTES = 256 * 1024;
@@ -174,7 +179,29 @@ const decodeCursor = (value: string): PageCursor => {
   }
 };
 
-\nconst encodeMessageId = (identifier: MessageIdentifier): string =>\n  Buffer.from(JSON.stringify(identifier), 'utf8').toString('base64url');\n\nconst decodeMessageId = (value: string): MessageIdentifier => {\n  try {\n    const parsed: unknown = JSON.parse(Buffer.from(value, 'base64url').toString('utf8'));\n    if (!parsed || typeof parsed !== 'object' ||\n      !('uidValidity' in parsed) || typeof parsed.uidValidity !== 'string' ||\n      !('uid' in parsed) || typeof parsed.uid !== 'number' ||\n      !Number.isSafeInteger(parsed.uid) || parsed.uid < 1) throw new Error('invalid message id');\n    return { uidValidity: parsed.uidValidity, uid: parsed.uid };\n  } catch {\n    throw codedError('MAIL_MESSAGE_IDENTIFIER_INVALID');\n  }\n};\n\nconst addressList = (addresses: ImapAddress[] | undefined): string[] =>
+const encodeMessageId = (identifier: MessageIdentifier): string =>
+  Buffer.from(JSON.stringify(identifier), 'utf8').toString('base64url');
+
+const decodeMessageId = (value: string): MessageIdentifier => {
+  try {
+    const parsed: unknown = JSON.parse(Buffer.from(value, 'base64url').toString('utf8'));
+    if (
+      !parsed ||
+      typeof parsed !== 'object' ||
+      !('uidValidity' in parsed) ||
+      typeof parsed.uidValidity !== 'string' ||
+      !('uid' in parsed) ||
+      typeof parsed.uid !== 'number' ||
+      !Number.isSafeInteger(parsed.uid) ||
+      parsed.uid < 1
+    ) throw new Error('invalid message id');
+    return { uidValidity: parsed.uidValidity, uid: parsed.uid };
+  } catch {
+    throw codedError('MAIL_MESSAGE_IDENTIFIER_INVALID');
+  }
+};
+
+const addressList = (addresses: ImapAddress[] | undefined): string[] =>
   (addresses ?? [])
     .map((item) => item.address?.trim() || item.name?.trim() || '')
     .filter(Boolean)
@@ -227,7 +254,11 @@ const walkMime = (node: MimeNode | undefined, result: {
   if (subtype === 'html') result.html.push(part);
 };
 
-const readBodyPart = async (client: ImapFlow, uid: number, part: string): Promise<{ value: string; truncated: boolean }> => {
+const readBodyPart = async (
+  client: ImapFlow,
+  uid: number,
+  part: string,
+): Promise<{ value: string; truncated: boolean }> => {
   const download = await client.download(uid, part, {
     uid: true,
     maxBytes: MAX_BODY_PART_BYTES,
@@ -256,8 +287,9 @@ const toSummary = (
     size?: number;
   },
   folderId: string,
+  uidValidity: string,
 ): ProviderMessageSummary => ({
-  id: String(message.uid),
+  id: encodeMessageId({ uidValidity, uid: message.uid }),
   folderId,
   subject: message.envelope?.subject?.trim() || '(no subject)',
   from: displayAddress(message.envelope?.from),
@@ -325,6 +357,7 @@ export class Go54Provider implements MailProvider {
         const mailbox = client.mailbox;
         if (!mailbox) throw codedError('MAILBOX_NOT_SELECTED');
         const uidValidity = String(mailbox.uidValidity ?? '');
+        if (!uidValidity) throw codedError('MAILBOX_UIDVALIDITY_UNAVAILABLE');
         const cursor = options.cursor ? decodeCursor(options.cursor) : undefined;
         if (cursor && cursor.uidValidity !== uidValidity) throw codedError('MAILBOX_UIDVALIDITY_CHANGED');
 
@@ -355,14 +388,17 @@ export class Go54Provider implements MailProvider {
     });
   }
 
-  async getMessage(folderId: string, uid: number): Promise<ProviderMessageDetail | null> {
-    if (!folderId || folderId.length > 500 || !Number.isSafeInteger(uid) || uid < 1) {
+  async getMessage(folderId: string, messageId: string): Promise<ProviderMessageDetail | null> {
+    if (!folderId || folderId.length > 500 || !messageId || messageId.length > 512) {
       throw codedError('MAIL_MESSAGE_IDENTIFIER_INVALID');
     }
+    const identifier = decodeMessageId(messageId);
     return withImapClient(this.credentials, async (client) => {
       const lock = await client.getMailboxLock(folderId, { readOnly: true });
       try {
-        const message = await client.fetchOne(uid, {
+        const uidValidity = String(client.mailbox?.uidValidity ?? '');
+        if (!uidValidity || uidValidity !== identifier.uidValidity) throw codedError('MAILBOX_UIDVALIDITY_CHANGED');
+        const message = await client.fetchOne(identifier.uid, {
           envelope: true,
           flags: true,
           internalDate: true,
@@ -370,11 +406,11 @@ export class Go54Provider implements MailProvider {
           bodyStructure: true,
         }, { uid: true });
         if (!message) return null;
-        const summary = toSummary(message, folderId);
+        const summary = toSummary(message, folderId, uidValidity);
         const mime = { plain: [] as string[], html: [] as string[], attachments: [] as ProviderAttachmentSummary[] };
         walkMime(message.bodyStructure as MimeNode | undefined, mime);
-        const plainParts = await Promise.all(mime.plain.slice(0, 2).map((part) => readBodyPart(client, uid, part)));
-        const htmlParts = await Promise.all(mime.html.slice(0, 2).map((part) => readBodyPart(client, uid, part)));
+        const plainParts = await Promise.all(mime.plain.slice(0, 2).map((part) => readBodyPart(client, identifier.uid, part)));
+        const htmlParts = await Promise.all(mime.html.slice(0, 2).map((part) => readBodyPart(client, identifier.uid, part)));
         return {
           ...summary,
           cc: addressList(message.envelope?.cc),

@@ -97,7 +97,8 @@ export const assertMailboxPermission = async (
 
 export const getMailboxAccess = async (input: { organisationId: string; mailboxId: string; actorId: string }) => {
   await assertMailboxPermission(input.organisationId, input.mailboxId, input.actorId, 'ADMINISTER');
-  return listMailboxGrants(input.organisationId, input.mailboxId);
+  const grants = await listMailboxGrants(input.organisationId, input.mailboxId);
+  return grants.map(({ membership, ...grant }) => ({ ...grant, user: membership.user }));
 };
 
 export const grantMailboxAccess = async (input: {
@@ -110,13 +111,14 @@ export const grantMailboxAccess = async (input: {
   await assertMailboxPermission(input.organisationId, input.mailboxId, input.actorId, 'ADMINISTER');
   const targetMembership = await findActiveMembership(input.organisationId, input.userId);
   if (!targetMembership) throw new AppError('TARGET_NOT_ACTIVE_MEMBER', 409, 'Access can only be granted to an active organisation member');
-  return upsertMailboxGrant({
+  const grant = await upsertMailboxGrant({
     organisationId: input.organisationId,
     mailboxId: input.mailboxId,
     userId: input.userId,
     permission: input.permission,
     grantedById: input.actorId,
   });
+  return { id: grant.id, permission: grant.permission, createdAt: grant.createdAt, user: grant.membership.user };
 };
 
 export const revokeMailboxAccess = async (input: {

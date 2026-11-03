@@ -1,6 +1,6 @@
 import type { Request, Response } from 'express';
 import { issueSession } from '../auth/auth.service.js';
-import { setSessionCookies } from '../auth/auth.controller.js';
+import { setSessionCookies } from '../auth/auth.cookies.js';
 import { acceptInvitation, acceptInvitationForExistingUser, getPendingInvitations, inviteMember, revokeOrganisationInvitation as revokeInvitation } from './invitations.service.js';
 
 export const createOrganisationInvitation = async (req: Request, res: Response) => {

@@ -17,31 +17,31 @@ describe('credential encryption', () => {
   it('encrypts credentials and decrypts them using their recorded key version', () => {
     process.env.CREDENTIAL_ENCRYPTION_KEYS_JSON = JSON.stringify({ 1: keyOne });
     process.env.CREDENTIAL_ENCRYPTION_ACTIVE_KEY_VERSION = '1';
-    const first = encryptCredential('provider-password');
+    const first = encryptCredential('provider-password', 'org-a:mailbox-a');
     expect(first.keyVersion).toBe(1);
     expect(first.ciphertext).not.toContain('provider-password');
-    expect(decryptCredential(first.ciphertext, first.keyVersion)).toBe('provider-password');
+    expect(decryptCredential(first.ciphertext, first.keyVersion, 'org-a:mailbox-a')).toBe('provider-password');
   });
 
   it('supports decrypting old credentials after the active key rotates', () => {
     process.env.CREDENTIAL_ENCRYPTION_KEYS_JSON = JSON.stringify({ 1: keyOne, 2: keyTwo });
     process.env.CREDENTIAL_ENCRYPTION_ACTIVE_KEY_VERSION = '1';
-    const oldCredential = encryptCredential('old-secret');
+    const oldCredential = encryptCredential('old-secret', 'org-a:mailbox-a');
     process.env.CREDENTIAL_ENCRYPTION_ACTIVE_KEY_VERSION = '2';
-    const newCredential = encryptCredential('new-secret');
+    const newCredential = encryptCredential('new-secret', 'org-a:mailbox-a');
     expect(oldCredential.keyVersion).toBe(1);
     expect(newCredential.keyVersion).toBe(2);
-    expect(decryptCredential(oldCredential.ciphertext, 1)).toBe('old-secret');
-    expect(decryptCredential(newCredential.ciphertext, 2)).toBe('new-secret');
+    expect(decryptCredential(oldCredential.ciphertext, 1, 'org-a:mailbox-a')).toBe('old-secret');
+    expect(decryptCredential(newCredential.ciphertext, 2, 'org-a:mailbox-a')).toBe('new-secret');
   });
 
   it('rejects tampered ciphertext without leaking crypto details', () => {
     process.env.CREDENTIAL_ENCRYPTION_KEYS_JSON = JSON.stringify({ 1: keyOne });
     process.env.CREDENTIAL_ENCRYPTION_ACTIVE_KEY_VERSION = '1';
-    const encrypted = encryptCredential('secret');
+    const encrypted = encryptCredential('secret', 'org-a:mailbox-a');
     const [version, iv, tag, data] = encrypted.ciphertext.split('.');
     const changedTag = `${tag?.startsWith('A') ? 'B' : 'A'}${tag?.slice(1) ?? ''}`;
-    expect(() => decryptCredential(`${version}.${iv}.${changedTag}.${data}`, 1))
+    expect(() => decryptCredential(`${version}.${iv}.${changedTag}.${data}`, 1, 'org-a:mailbox-a'))
       .toThrow('CREDENTIAL_DECRYPTION_FAILED');
   });
 });

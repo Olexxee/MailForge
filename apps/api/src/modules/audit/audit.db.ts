@@ -1,4 +1,5 @@
-import { Prisma } from '@prisma/client';\nimport { prisma } from '../../lib/prisma.js';
+import { Prisma } from '@prisma/client';
+import { prisma } from '../../lib/prisma.js';
 
 export const writeAuditEvent = (input: {
   organisationId: string; actorId?: string; action: string; resourceType: string;

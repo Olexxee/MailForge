@@ -185,6 +185,20 @@ export const revokeMailboxGrant = (input: {
     where: { mailboxId_userId: { mailboxId: input.mailboxId, userId: input.userId } },
   });
   if (!grant || grant.organisationId !== input.organisationId || grant.revokedAt) return 0;
+  const [actorMembership, actorGrant] = await Promise.all([
+    tx.organizationMembership.findFirst({
+      where: { organisationId: input.organisationId, userId: input.actorId, isActive: true, user: { isActive: true } },
+      select: { id: true },
+    }),
+    tx.mailboxAccess.findUnique({
+      where: { mailboxId_userId: { mailboxId: input.mailboxId, userId: input.actorId } },
+      select: { organisationId: true, permission: true, revokedAt: true },
+    }),
+  ]);
+  if (!actorMembership || !actorGrant || actorGrant.organisationId !== input.organisationId ||
+      actorGrant.revokedAt || actorGrant.permission !== 'ADMINISTER') {
+    throw new Error('MAILBOX_ADMIN_ACCESS_REVOKED');
+  }
 
   if (grant.permission === 'ADMINISTER') {
     const remainingAdministrators = await tx.mailboxAccess.count({

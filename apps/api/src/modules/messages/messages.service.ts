@@ -155,7 +155,7 @@ export const downloadMailboxAttachment = async (input: {
   folderId: string;
   messageId: string;
   partId: string;
-}) => {
+}): Promise<NonNullable<Awaited<ReturnType<Go54Provider['downloadAttachment']>>>> => {
   const provider = await getProvider(input.organisationId, input.mailboxId, input.actorId);
   const folderId = decodeFolderId(input.folderId);
   try {

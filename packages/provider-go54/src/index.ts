@@ -373,7 +373,7 @@ export class Go54Provider implements MailProvider {
           : [];
         const messages = fetched
           .map((message) => toSummary(message, folderId, uidValidity))
-          .sort((a, b) => b.id.localeCompare(a.id, undefined, { numeric: true }));
+          .sort((a, b) => b.receivedAt.getTime() - a.receivedAt.getTime());
         const nextBeforeUid = uids.length > limit
           ? (pageUids[pageUids.length - 1] ?? 1) - 1
           : minUid - 1;

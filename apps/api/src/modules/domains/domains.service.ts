@@ -1,6 +1,7 @@
 import { randomBytes } from 'node:crypto';
 import { resolveTxt } from 'node:dns/promises';
 import { domainToASCII } from 'node:url';
+import { isIP } from 'node:net';
 import { AppError } from '../../lib/http.js';
 import { safeEqual } from '../../lib/crypto.js';
 import { assertOrganisationRole } from '../organisations/organisations.service.js';
@@ -9,11 +10,12 @@ import {
   findDomainRecord,
   listDomainRecords,
   markDomainRecordVerified,
+  rotateDomainVerificationToken,
 } from './domains.db.js';
 
 const normaliseDomain = (input: string): string => {
   const domain = domainToASCII(input.trim().replace(/\.$/, '').toLowerCase());
-  if (!domain || domain.length > 253 || domain.split('.').some((label) =>
+  if (!domain || !domain.includes('.') || isIP(domain) || domain.length > 253 || domain.split('.').some((label) =>
     label.length < 1 || label.length > 63 || !/^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/.test(label),
   )) {
     throw new AppError('DOMAIN_INVALID', 400, 'Enter a valid domain name');
@@ -89,4 +91,32 @@ export const verifyOrganisationDomain = async (input: {
   const updated = await findDomainRecord(input.organisationId, input.domainId);
   if (!updated) throw new AppError('DOMAIN_NOT_FOUND', 404, 'Domain was not found');
   return { id: updated.id, name: updated.name, status: updated.status, verifiedAt: updated.verifiedAt };
+};
+
+export const rotateOrganisationDomainChallenge = async (input: {
+  organisationId: string;
+  actorId: string;
+  domainId: string;
+}) => {
+  await assertOrganisationRole(input.organisationId, input.actorId, ['OWNER', 'ADMIN']);
+  const domain = await findDomainRecord(input.organisationId, input.domainId);
+  if (!domain) throw new AppError('DOMAIN_NOT_FOUND', 404, 'Domain was not found');
+  if (domain.status === 'VERIFIED') {
+    throw new AppError('DOMAIN_ALREADY_VERIFIED', 409, 'A verified domain does not need a new challenge');
+  }
+  const verificationToken = randomBytes(32).toString('base64url');
+  const updated = await rotateDomainVerificationToken({
+    organisationId: input.organisationId,
+    domainId: input.domainId,
+    actorId: input.actorId,
+    verificationToken,
+  });
+  if (updated !== 1) throw new AppError('DOMAIN_NOT_FOUND', 404, 'Pending domain was not found');
+  return {
+    verificationRecord: {
+      type: 'TXT' as const,
+      host: `_mailforge-verification.${domain.name}`,
+      value: verificationToken,
+    },
+  };
 };

@@ -1,6 +1,6 @@
 import type { RequestHandler } from 'express';
 import { rateLimit } from 'express-rate-limit';
-import { z } from 'zod';
+import type { ZodType } from 'zod';
 
 export class AppError extends Error {
   constructor(
@@ -21,7 +21,7 @@ export const asyncWrapper = (handler: RequestHandler): RequestHandler => (req, r
 export const createRateLimiter = (limit: number): RequestHandler =>
   rateLimit({ windowMs: 15 * 60 * 1000, limit, standardHeaders: 'draft-8', legacyHeaders: false });
 
-export const validateBody = (schema: z.ZodType): RequestHandler => (req, _res, next) => {
+export const validateBody = (schema: ZodType): RequestHandler => (req, _res, next) => {
   const parsed = schema.safeParse(req.body);
   if (!parsed.success) {
     next(parsed.error);

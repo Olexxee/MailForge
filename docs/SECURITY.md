@@ -30,3 +30,15 @@ Tests prove mailbox isolation, secret encryption/redaction, HTML sanitization, a
 - Invitation tokens expire after seven days and are single-use/revocable. Until email delivery is integrated, the raw token is returned once to an authorised administrator for secure manual distribution; do not paste it into logs, tickets, or public channels.
 - Organisation role checks are performed in services on every organisation-management operation. Organisation roles do not grant mailbox access; Phase 2 must implement separate mailbox grants.
 - The current login limiter uses the process-local express-rate-limit store. Multi-instance production deployments must replace it with a shared store before exposing authentication publicly.
+
+
+## Phase 2 provider credential and mailbox controls
+
+- GO54 passwords are encrypted with AES-256-GCM using a random 96-bit IV, authentication tag, and associated data binding the ciphertext to its organisation and mailbox email. The database stores the versioned ciphertext and key version; plaintext credentials exist only in the request/service process while validating a connection.
+- Configure `CREDENTIAL_ENCRYPTION_KEYS_JSON` as a JSON map from integer key versions to base64-encoded 32-byte keys, and `CREDENTIAL_ENCRYPTION_ACTIVE_KEY_VERSION` as the active version. Keep the keyring in deployment secrets, never PostgreSQL or Git. Retain old key versions until all records encrypted with them have been re-encrypted and verified.
+- Domain ownership requires a DNS TXT challenge. Mailbox creation is blocked until the domain is VERIFIED. MailForge does not modify DNS.
+- GO54 IMAP and SMTP checks are independent. Trusted server-side endpoint settings select IMAP 993/143 and SMTP 465/587; implicit TLS or required STARTTLS is enforced with certificate verification and TLS 1.2 minimum. No browser-supplied host is accepted. Validation does not send an email.
+- Provider validation requires an active ADMINISTER grant for the mailbox. It does not grant the caller message-reading rights beyond that grant.
+- Mailbox grants are separate from organisation roles. Every mailbox access check requires an active organisation membership and a sufficient active mailbox grant. Composite foreign keys constrain mailbox/domain/provider connection records to the same organisation.
+- The creator receives ADMINISTER access on a newly connected mailbox. The last active mailbox administrator cannot be revoked.
+- Protocol diagnostics and credential values are never returned or logged. Persist only safe protocol status and error codes.

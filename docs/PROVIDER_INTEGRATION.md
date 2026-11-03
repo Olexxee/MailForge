@@ -20,3 +20,16 @@ Do not assume mailbox-password IMAP. Plan OAuth consent/scopes, refresh/revocati
 
 ## Resend separation
 Resend remains for transactional app email. It is not a replacement for GO54 human mailbox IMAP/SMTP. Do not alter Resend or DNS/SPF/DKIM/DMARC without approval.
+
+## Phase 2 GO54 adapter implementation
+
+The first adapter uses ImapFlow for IMAP and Nodemailer for SMTP. IMAP and SMTP are checked independently; one can succeed while the other fails.
+
+GO54's published Outlook setup guide documents the generic host `mail.yoursite.com`, IMAP SSL port 993, and SMTP SSL port 465. It also lists port 587 among non-SSL SMTP options. These are generic instructions, not confirmation of the exact endpoints for every GO54 Cloud Mail product or account. Confirm the exact IMAP and SMTP hostnames and supported ports in the mailbox's account settings or with GO54 support before configuring MailForge. See the [GO54 Outlook setup guide](https://knowledgebase.go54.com/en/article/29-setting-up-webmail-with-outlook).
+
+- Set `GO54_IMAP_HOST`, `GO54_IMAP_PORT`, `GO54_SMTP_HOST`, and `GO54_SMTP_PORT` in the API environment. Defaults are IMAP 993 (implicit TLS) and SMTP 465 (implicit TLS); port 143 requires STARTTLS for IMAP and port 587 requires STARTTLS for SMTP.
+- These endpoint values are server-side configuration only. The browser cannot supply arbitrary connection hosts.
+- TLS certificate verification is enabled, TLS 1.2 is the minimum, and connection/socket timeouts are bounded. No plaintext fallback is allowed.
+- IMAP validation authenticates and lists folders, then closes the connection. SMTP validation calls transport verification only; it never sends a message.
+- No message read/send/folder mutation capability is advertised yet. Those capabilities are added in later phases after contract and provider-specific tests.
+- GO54 account-level IMAP/SMTP access remains unconfirmed until the user explicitly authorises testing against a real mailbox. Network validation is not part of CI.

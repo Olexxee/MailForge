@@ -2,7 +2,7 @@
 
 Private, multi-domain email management for an organisation.
 
-**Current status:** Phase 0 foundation and CI verification are merged. Phase 1 backend authentication and organisation access are merged. The admin workspace UI is being implemented on `feat/phase-1-admin-workspace`; Phase 1 is not complete until the UI and full acceptance checks pass in CI. Dependency lockfile and npm audit findings remain Phase 0 hardening items.
+**Current status:** Phase 0 foundation and Phase 1 authentication/admin workspace are merged and verified. Phase 2 domain verification, encrypted GO54 connections, mailbox registration, and explicit mailbox grants are being implemented on `feat/phase-2-domains-go54-mailboxes`. Dependency lockfile and npm audit findings remain hardening items.
 
 MailForge connects existing email providers and gives authorised staff one unified webmail and administration interface. It is not an email host and will not operate its own mail server.
 
@@ -29,7 +29,7 @@ Requirements: Node.js 22, npm 10+, and PostgreSQL 16.
    Remove the bootstrap values immediately after successful execution. The command refuses to run after an active owner exists.
 6. Configure `VITE_API_URL` for the web app when the API is not at `http://localhost:4000/api/v1`. Configure the API's `WEB_ORIGIN` to the exact browser origin.
 
-Do not commit `.env` or use production credentials in local development.
+Do not commit `.env` or use production credentials in local development. Before connecting a mailbox, generate a 32-byte key with `openssl rand -base64 32` and add it to `CREDENTIAL_ENCRYPTION_KEYS_JSON` as a versioned JSON keyring. Configure the exact GO54 IMAP/SMTP hosts from the mailbox account settings in `GO54_IMAP_HOST` and `GO54_SMTP_HOST`; do not guess them. Ports 993/465 use implicit TLS; ports 143/587 require STARTTLS.
 
 ## Product target
 
@@ -314,8 +314,8 @@ An authorised staff member signs in, opens the GO54 mailbox, reads a message, an
 - [x] Core technology and architecture direction approved
 - [x] Phase sequence and foundation requirements defined
 - [x] Phase 0 initial implementation and CI baseline (dependency reproducibility/security audit follow-up remains)
-- [ ] Phase 1 authentication and organisation access
-- [ ] Phase 2 GO54 provider/mailboxes
+- [x] Phase 1 authentication and organisation access
+- [ ] Phase 2 GO54 provider/mailboxes (implementation in progress on `feat/phase-2-domains-go54-mailboxes`)
 - [ ] Phase 3 inbox and reading
 - [ ] Phase 4 compose and sending
 - [ ] Phase 5 productivity

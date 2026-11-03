@@ -16,8 +16,8 @@
     "dev:web": "npm run dev --workspace=@mailforge/web",
     "dev:worker": "npm run dev --workspace=@mailforge/worker",
     "build": "npm run build --workspace=@mailforge/shared && npm run build --workspaces --if-present",
-    "typecheck": "npm run build --workspace=@mailforge/shared && npm run typecheck --workspaces --if-present",
-    "test": "npm run test --workspaces --if-present",
+    "typecheck": "npm run build --workspace=@mailforge/shared && npm run build --workspace=@mailforge/provider-core && npm run build --workspace=@mailforge/provider-go54 && npm run typecheck --workspaces --if-present",
+    "test": "npm run db:generate --workspace=@mailforge/database && npm run build --workspace=@mailforge/shared && npm run build --workspace=@mailforge/provider-core && npm run build --workspace=@mailforge/provider-go54 && npm run test --workspaces --if-present",
     "lint": "eslint .",
     "format:check": "prettier --check .",
     "bootstrap:owner": "npm run bootstrap:owner --workspace=@mailforge/api"

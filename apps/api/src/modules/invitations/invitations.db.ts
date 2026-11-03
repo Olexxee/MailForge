@@ -8,6 +8,12 @@ export const createInvitation = (input: {
 export const findInvitationByTokenHash = (tokenHash: string) =>
   prisma.organizationInvitation.findUnique({ where: { tokenHash } });
 
+export const revokeInvitation = (organisationId: string, invitationId: string) =>
+  prisma.organizationInvitation.updateMany({
+    where: { id: invitationId, organisationId, acceptedAt: null, revokedAt: null },
+    data: { revokedAt: new Date() },
+  });
+
 export const acceptInvitationTransaction = async (input: {
   invitationId: string; email: string; displayName: string; passwordHash: string;
 }) => prisma.$transaction(async (tx) => {

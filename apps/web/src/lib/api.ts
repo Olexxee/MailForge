@@ -17,26 +17,60 @@ export const setCsrfToken = (token: string | undefined) => {
   csrfToken = token;
 };
 
+const parseResponse = async <T>(response: Response): Promise<ApiEnvelope<T>> => {
+  const raw = await response.text();
+  try {
+    return JSON.parse(raw) as ApiEnvelope<T>;
+  } catch {
+    throw new ApiError('The server returned an unreadable response.', response.status);
+  }
+};
+
 export async function apiRequest<T>(
   path: string,
   options: { method?: string; body?: unknown } = {},
 ): Promise<T> {
   const method = (options.method ?? 'GET').toUpperCase();
-  const headers = new Headers({ Accept: 'application/json' });
-  if (options.body !== undefined) headers.set('Content-Type', 'application/json');
+  const isWrite = !['GET', 'HEAD', 'OPTIONS'].includes(method);
   const isPublicWrite = path === '/auth/login' || path === '/invitations/accept';
-  if (!['GET', 'HEAD', 'OPTIONS'].includes(method) && !isPublicWrite) {
-    if (!csrfToken) throw new ApiError('Your security token has expired. Reload and sign in again.', 403, 'CSRF_MISSING');
-    headers.set('x-csrf-token', csrfToken);
+  if (isWrite && !isPublicWrite && !csrfToken) {
+    throw new ApiError('Your security token is missing. Reload and sign in again.', 403, 'CSRF_MISSING');
   }
 
-  const response = await fetch(`${API_BASE}${path}`, {
-    method,
-    credentials: 'include',
-    headers,
-    ...(options.body === undefined ? {} : { body: JSON.stringify(options.body) }),
-  });
-  const payload = await response.json() as ApiEnvelope<T>;
+  const send = async () => {
+    const headers = new Headers({ Accept: 'application/json' });
+    if (options.body !== undefined) headers.set('Content-Type', 'application/json');
+    if (isWrite && !isPublicWrite && csrfToken) headers.set('x-csrf-token', csrfToken);
+    return fetch(`${API_BASE}${path}`, {
+      method,
+      credentials: 'include',
+      headers,
+      ...(options.body === undefined ? {} : { body: JSON.stringify(options.body) }),
+    });
+  };
+
+  let response = await send();
+  let payload = await parseResponse<T>(response);
+  if (
+    !response.ok &&
+    isWrite &&
+    !isPublicWrite &&
+    (payload as ApiFailure).error?.code === 'CSRF_INVALID'
+  ) {
+    const renewalResponse = await fetch(`${API_BASE}/auth/csrf`, {
+      method: 'GET',
+      credentials: 'include',
+      headers: { Accept: 'application/json' },
+    });
+    const renewal = await parseResponse<{ csrfToken: string }>(renewalResponse);
+    if (!renewalResponse.ok || !renewal.success) {
+      throw new ApiError('Your session has expired. Sign in again.', renewalResponse.status, 'SESSION_EXPIRED');
+    }
+    setCsrfToken(renewal.data.csrfToken);
+    response = await send();
+    payload = await parseResponse<T>(response);
+  }
+
   if (!response.ok || !payload.success) {
     const failure = payload as ApiFailure;
     throw new ApiError(

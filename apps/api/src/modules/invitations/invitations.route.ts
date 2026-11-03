@@ -24,6 +24,7 @@ invitationsRouter.post(
 );
 invitationsRouter.post(
   '/invitations/accept',
+  requireTrustedOrigin,
   createRateLimiter(5),
   validateBody(acceptInvitationSchema),
   asyncWrapper(acceptOrganisationInvitation),

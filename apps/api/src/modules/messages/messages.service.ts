@@ -21,7 +21,9 @@ const safeHtmlOptions: sanitizeHtml.IOptions = {
   disallowedTagsMode: 'discard',
 };
 
-export const sanitizeMessageHtml = (html: string): string => sanitizeHtml(html, safeHtmlOptions);\n\nconst providerError = (error: unknown): never => {
+export const sanitizeMessageHtml = (html: string): string => sanitizeHtml(html, safeHtmlOptions);
+
+const providerError = (error: unknown): never => {
   const code = error && typeof error === 'object' && 'code' in error
     ? String((error as { code: unknown }).code)
     : '';

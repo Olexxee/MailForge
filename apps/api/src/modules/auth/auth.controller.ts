@@ -21,7 +21,7 @@ export const setSessionCookies = (res: Response, sessionToken: string, csrfToken
 
 export const clearSessionCookies = (res: Response) => {
   res.append('Set-Cookie', `${SESSION_COOKIE}=; ${cookieOptions(0)}`);
-  const csrfAttributes = isProduction() ? 'SameSite=None; Secure;' : 'SameSite=Lax;';
+  const csrfAttributes = isProduction() ? 'SameSite=Lax; Secure;' : 'SameSite=Lax;';
   res.append('Set-Cookie', `${CSRF_COOKIE}=; Path=/api/v1; ${csrfAttributes} Max-Age=0`);
 };
 

@@ -41,12 +41,13 @@ All state-changing authenticated endpoints require the CSRF cookie and matching 
 - `GET /api/v1/organisations/:organisationId/domains`: active organisation members may list domain records.
 - `POST /api/v1/organisations/:organisationId/domains`: OWNER/ADMIN only. Adds a PENDING domain and returns a one-time DNS TXT challenge at `_mailforge-verification.<domain>`. This does not change DNS or prove ownership.
 - `POST /api/v1/organisations/:organisationId/domains/:domainId/verify`: OWNER/ADMIN only. Resolves the TXT challenge and marks the domain VERIFIED only on an exact match.
+- `POST /api/v1/organisations/:organisationId/domains/:domainId/verification-challenge`: OWNER/ADMIN only. Rotates a PENDING domain's TXT challenge if the one-time value was lost; verified domains cannot be rotated.
 - `GET /api/v1/organisations/:organisationId/mailboxes`: returns only ACTIVE mailboxes for which the current user has an active explicit grant.
 - `POST /api/v1/organisations/:organisationId/mailboxes`: OWNER/ADMIN only. Creates a GO54 provider connection and mailbox after the selected domain is verified and the mailbox address matches that domain. Provider credentials are encrypted before persistence. The creator receives ADMINISTER access. This endpoint does not test network connectivity.
 - `POST /api/v1/organisations/:organisationId/provider-connections/:connectionId/validate`: requires ADMINISTER mailbox access and separately checks IMAP authentication/folder listing and SMTP TLS/authentication using SMTP verify. It never sends a message.
 - `GET /api/v1/organisations/:organisationId/mailboxes/:mailboxId/access`: requires ADMINISTER.
 - `POST /api/v1/organisations/:organisationId/mailboxes/:mailboxId/access`: requires ADMINISTER and an active organisation membership for the target user.
-- `DELETE /api/v1/organisations/:organisationId/mailboxes/:mailboxId/access/:userId`: requires ADMINISTER. The last active mailbox administrator cannot be removed.
+- `DELETE /api/v1/organisations/:organisationId/mailboxes/:mailboxId/access/:userId`: requires ADMINISTER. The last active mailbox administrator cannot be removed. Deactivating an organisation membership revokes all of that user's mailbox grants; it is blocked if that user is the last active ADMINISTER grant on any mailbox. Re-activating the membership does not restore revoked grants.
 
 Mailbox permissions are hierarchical: READ (read only), SEND (read/send), MANAGE (read/send/organise), ADMINISTER (all mailbox permissions and access administration). Organisation roles never imply mailbox access. A user must have both an active organisation membership and an active mailbox grant.
 

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
-import { apiRequest } from './lib/api.js';
+import { apiRequest, type Member } from './lib/api.js';
 
 type Section = 'domains' | 'mailboxes';
 type Domain = { id: string; name: string; status: 'PENDING' | 'VERIFIED'; verifiedAt: string | null; createdAt: string };
@@ -29,10 +29,11 @@ type MailboxGrant = {
 const statusLabel = (status: string) => status === 'AVAILABLE' ? 'Available' : status === 'UNAVAILABLE' ? 'Unavailable' : status;
 const dateLabel = (value: string | null) => value ? new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value)) : 'Not checked';
 
-export function Phase2Workspace({ organisationId, canManage, section }: {
+export function Phase2Workspace({ organisationId, canManage, section, members }: {
   organisationId: string;
   canManage: boolean;
   section: Section;
+  members: Member[];
 }) {
   const [domains, setDomains] = useState<Domain[]>([]);
   const [mailboxes, setMailboxes] = useState<Mailbox[]>([]);
@@ -314,7 +315,7 @@ export function Phase2Workspace({ organisationId, canManage, section }: {
           {selectedMailbox && <section className="panel">
             <div className="panel-heading"><div><h2>Access: {selectedMailbox.email}</h2><p>Manage explicit mailbox grants. Organisation roles do not grant mailbox access.</p></div><button className="small-action" onClick={() => setSelectedMailbox(null)}>Close</button></div>
             <form className="invite-form" onSubmit={grantAccess}>
-              <label>Organisation user ID<input value={targetUserId} onChange={(e) => setTargetUserId(e.target.value)} placeholder="Paste the user's ID" required /></label>
+              <label>Organisation member{members.length > 0 ? <select value={targetUserId} onChange={(e) => setTargetUserId(e.target.value)} required><option value="">Select a member</option>{members.filter((member) => member.isActive).map((member) => <option key={member.user.id} value={member.user.id}>{member.user.displayName} · {member.user.email}</option>)}</select> : <input value={targetUserId} onChange={(e) => setTargetUserId(e.target.value)} placeholder="Paste the user's ID" required />}</label>
               <label>Permission<select value={permission} onChange={(e) => setPermission(e.target.value as MailboxGrant['permission'])}>
                 <option value="READ">READ — view messages</option><option value="SEND">SEND — read and send</option><option value="MANAGE">MANAGE — read, send and organise</option><option value="ADMINISTER">ADMINISTER — full access and grants</option>
               </select></label>

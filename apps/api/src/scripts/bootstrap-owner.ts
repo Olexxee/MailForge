@@ -14,15 +14,28 @@ const input = schema.parse(process.env);
 const prisma = new PrismaClient();
 
 try {
-  const existingOwner = await prisma.organizationMembership.findFirst({ where: { role: 'OWNER', isActive: true } });
-  if (existingOwner) throw new Error('An active organisation owner already exists; bootstrap is disabled.');
   const passwordHash = await hashPassword(input.BOOTSTRAP_OWNER_PASSWORD);
   await prisma.$transaction(async (tx) => {
+    // Serialise bootstrap attempts so two concurrent CLI runs cannot create competing owners.
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(781234567890)`;
+    const existingOwner = await tx.organizationMembership.findFirst({
+      where: { role: 'OWNER', isActive: true },
+    });
+    if (existingOwner) {
+      throw new Error('An active organisation owner already exists; bootstrap is disabled.');
+    }
     const user = await tx.user.create({
-      data: { email: input.BOOTSTRAP_OWNER_EMAIL, passwordHash, displayName: input.BOOTSTRAP_OWNER_NAME },
+      data: {
+        email: input.BOOTSTRAP_OWNER_EMAIL,
+        passwordHash,
+        displayName: input.BOOTSTRAP_OWNER_NAME,
+      },
     });
     const organisation = await tx.organisation.create({
-      data: { name: input.BOOTSTRAP_ORGANISATION_NAME, slug: input.BOOTSTRAP_ORGANISATION_SLUG },
+      data: {
+        name: input.BOOTSTRAP_ORGANISATION_NAME,
+        slug: input.BOOTSTRAP_ORGANISATION_SLUG,
+      },
     });
     await tx.organizationMembership.create({
       data: { organisationId: organisation.id, userId: user.id, role: 'OWNER' },

@@ -3,8 +3,14 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "engines": { "node": ">=22 <23", "npm": ">=10" },
-  "workspaces": ["packages/*", "apps/*"],
+  "engines": {
+    "node": ">=22 <23",
+    "npm": ">=10"
+  },
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
   "scripts": {
     "dev": "npm run dev --workspace=@mailforge/api",
     "dev:web": "npm run dev --workspace=@mailforge/web",
@@ -13,7 +19,8 @@
     "typecheck": "npm run build --workspace=@mailforge/shared && npm run typecheck --workspaces --if-present",
     "test": "npm run test --workspaces --if-present",
     "lint": "eslint .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "bootstrap:owner": "npm run bootstrap:owner --workspace=@mailforge/api"
   },
   "devDependencies": {
     "@eslint/js": "^9.17.0",

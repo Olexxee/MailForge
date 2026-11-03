@@ -138,7 +138,17 @@ describe('Phase 1 authentication and organisation workflows', () => {
     expect(membership?.role).toBe('ADMIN');
   });
 
-  it('lists pending invitations only for organisation administrators', async () => {\n    const invitation = await inviteMember({\n      organisationId, actorId: ownerId, email: `listed-${suffix}@mailforge.test`, role: 'STAFF',\n    });\n    const listed = await getPendingInvitations(organisationId, adminId);\n    expect(listed.some((item) => item.id === invitation.id)).toBe(true);\n    await expect(getPendingInvitations(organisationId, staffId))\n      .rejects.toMatchObject({ code: 'ACCESS_DENIED', statusCode: 403 });\n  });\n\n  it('rejects expired invitations', async () => {
+  it('lists pending invitations only for organisation administrators', async () => {
+    const invitation = await inviteMember({
+      organisationId, actorId: ownerId, email: `listed-${suffix}@mailforge.test`, role: 'STAFF',
+    });
+    const listed = await getPendingInvitations(organisationId, adminId);
+    expect(listed.some((item) => item.id === invitation.id)).toBe(true);
+    await expect(getPendingInvitations(organisationId, staffId))
+      .rejects.toMatchObject({ code: 'ACCESS_DENIED', statusCode: 403 });
+  });
+
+  it('rejects expired invitations', async () => {
     const token = `expired-${suffix}-invitation-token-1234567890`;
     await prisma.organizationInvitation.create({
       data: {
@@ -171,7 +181,10 @@ describe('Phase 1 authentication and organisation workflows', () => {
     const initial = await issueSession(ownerId);
     const initialRecord = await getSession(initial.sessionToken);
     expect(initialRecord).not.toBeNull();
-    const csrfToken = await renewCsrfToken(initialRecord!.id);\n    const csrfUpdatedSession = await getSession(initial.sessionToken);\n    expect(csrfUpdatedSession?.csrfTokenHash).toBe(hashToken(csrfToken));\n    const rotated = await rotateUserSession(initialRecord!.id, ownerId, initial.absoluteExpiresAt);
+    const csrfToken = await renewCsrfToken(initialRecord!.id);
+    const csrfUpdatedSession = await getSession(initial.sessionToken);
+    expect(csrfUpdatedSession?.csrfTokenHash).toBe(hashToken(csrfToken));
+    const rotated = await rotateUserSession(initialRecord!.id, ownerId, initial.absoluteExpiresAt);
     expect(await getSession(initial.sessionToken)).toBeNull();
     const active = await getSession(rotated.sessionToken);
     expect(active).not.toBeNull();

@@ -87,9 +87,13 @@ export const verifyOrganisationDomain = async (input: {
     organisationId: input.organisationId,
     domainId: domain.id,
     actorId: input.actorId,
+    expectedToken: domain.verificationToken,
   });
   const updated = await findDomainRecord(input.organisationId, input.domainId);
   if (!updated) throw new AppError('DOMAIN_NOT_FOUND', 404, 'Domain was not found');
+  if (updated.status !== 'VERIFIED') {
+    throw new AppError('DOMAIN_CHALLENGE_CHANGED', 409, 'The verification challenge changed. Publish the current TXT value and try again');
+  }
   return { id: updated.id, name: updated.name, status: updated.status, verifiedAt: updated.verifiedAt };
 };
 

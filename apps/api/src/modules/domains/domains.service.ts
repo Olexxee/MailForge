@@ -61,7 +61,7 @@ export const verifyOrganisationDomain = async (input: {
   organisationId: string;
   actorId: string;
   domainId: string;
-}) => {
+}, dnsResolver: (hostname: string) => Promise<string[][]> = resolveTxt) => {
   await assertOrganisationRole(input.organisationId, input.actorId, ['OWNER', 'ADMIN']);
   const domain = await findDomainRecord(input.organisationId, input.domainId);
   if (!domain) throw new AppError('DOMAIN_NOT_FOUND', 404, 'Domain was not found');
@@ -69,7 +69,7 @@ export const verifyOrganisationDomain = async (input: {
 
   let records: string[][];
   try {
-    records = await resolveTxt(`_mailforge-verification.${domain.name}`);
+    records = await dnsResolver(`_mailforge-verification.${domain.name}`);
   } catch (error) {
     const code = error && typeof error === 'object' && 'code' in error ? error.code : undefined;
     if (code === 'ENODATA' || code === 'ENOTFOUND' || code === 'NXDOMAIN') {

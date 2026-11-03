@@ -126,12 +126,12 @@ export const getMailboxMessage = async (input: {
   mailboxId: string;
   actorId: string;
   folderId: string;
-  messageUid: number;
+  messageId: string;
 }) => {
   const provider = await getProvider(input.organisationId, input.mailboxId, input.actorId);
   const folderId = decodeFolderId(input.folderId);
   try {
-    const message = await provider.getMessage(folderId, input.messageUid);
+    const message = await provider.getMessage(folderId, input.messageId);
     if (!message) throw new AppError('MESSAGE_NOT_FOUND', 404, 'Message was not found in this folder');
     return {
       ...message,

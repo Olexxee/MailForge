@@ -66,13 +66,20 @@ Keep all five files together inside each feature directory. Do not create global
 
 ## Phase 3 — Inbox, folders, and reading
 
-- Provider-backed folders and capability-aware mapping.
-- Bounded stable pagination, message detail, safe HTML sanitisation.
-- Read/unread state where supported.
-- Authorised, bounded attachment streaming.
-- Sync checkpoints with correct IMAP UIDVALIDITY handling where needed.
+- [x] Add provider-neutral folder, message summary, message page, and message detail contracts.
+- [x] Implement GO54 folder listing and read-only IMAP message retrieval.
+- [x] Implement bounded UID pagination with UIDVALIDITY-bound cursors; stale cursors fail closed.
+- [x] Add mailbox-scoped API routes with explicit READ-grant enforcement and no-store responses.
+- [x] Sanitise HTML server-side using a strict allow-list; do not render remote images or active content.
+- [x] Bound each text/html body-part fetch to 256 KiB; return attachment metadata only.
+- [x] Build the responsive inbox UI against the read endpoints.
+- [x] Add fake-provider pagination contract tests and server-side HTML sanitisation tests.
+- [ ] Add GO54 adapter tests for UID pagination, UIDVALIDITY changes, body bounds, and safe failure mapping.
+- [ ] Implement authorised, bounded attachment streaming as a separately tested increment.
+- [ ] Add read/unread mutation only after permission and provider semantics are defined.
+- [ ] Add sync checkpoints only where required; preserve UIDVALIDITY correctness.
 
-**Exit criteria:** authorised users can list/read; cross-mailbox access is denied; content/attachments are bounded; unsafe HTML is neutralised; provider errors are safely mapped.
+**Exit criteria:** authorised users can list folders and read messages; cross-mailbox access is denied; content/attachments are bounded; unsafe HTML is neutralised; provider failures are safely mapped. Live GO54 validation remains a separate operational check and is not required for deterministic CI.
 
 ## Phase 4 — Compose, reply, forward, and send
 

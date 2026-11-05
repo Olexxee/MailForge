@@ -158,3 +158,22 @@ td { padding: 14px 20px; border-top: 1px solid #f0f2f4; color: #586772; font-siz
 @media (max-width: 760px) {
   .mailbox-connect-form { grid-template-columns: 1fr; }
 }
+
+
+/* Phase 3 read-only inbox */
+.inbox-layout { display: grid; grid-template-columns: minmax(150px, 220px) minmax(0, 1fr); gap: 20px; min-height: 480px; }
+.inbox-folders { padding-right: 12px; border-right: 1px solid var(--line); }
+.inbox-folders .nav-item { color: #5d6b74; }
+.inbox-folders .nav-item.active { color: #fff; }
+.inbox-message-pane { min-width: 0; }
+.inbox-message-button { display: grid; gap: 4px; max-width: 100%; padding: 0; border: 0; color: #273640; background: transparent; text-align: left; white-space: normal; }
+.inbox-message-button span { color: #78858d; font-size: 10px; overflow-wrap: anywhere; }
+.inbox-message-button:hover { color: var(--accent-dark); }
+.inbox-message-pane table { white-space: normal; }
+.inbox-message-pane td { vertical-align: top; }
+@media (max-width: 620px) {
+  .inbox-layout { grid-template-columns: 1fr; gap: 12px; }
+  .inbox-folders { display: flex; flex-wrap: wrap; gap: 5px; padding: 0 0 10px; border-right: 0; border-bottom: 1px solid var(--line); }
+  .inbox-folders .eyebrow { flex-basis: 100%; }
+  .inbox-folders .nav-item { width: auto !important; padding: 7px 9px; }
+}

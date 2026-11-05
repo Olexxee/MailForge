@@ -1,7 +1,7 @@
 # Provider Integration
 
 ## GO54 initial configuration
-IMAP host imap.go54mail.com, port 993, SSL/TLS. SMTP host smtp.go54mail.com, port 587, STARTTLS. Webmail https://webmail.go54mail.com/appsuite. These are user-provided setup notes, not proof that each mailbox has IMAP/SMTP enabled. Validate account/provider requirements. Never commit real credentials.
+The user's GO54 account settings show IMAP host `imap.go54mail.com`, port 993, SSL/TLS, and SMTP host `smtp.go54mail.com`, port 587, STARTTLS. The webmail URL shown by GO54 is https://webmail.go54mail.com/appsuite. These are account-screen settings, not proof that protocol access is enabled for every mailbox. The application configures only the hostnames and ports. The mailbox password is supplied through the authenticated mailbox-connection form, encrypted with AES-256-GCM, and stored in the database; it must never be placed in a committed config file or frontend bundle.
 
 ## Validation
 Test IMAP authentication/folder listing and SMTP authentication/connectivity separately. Do not send a real email during validation unless user initiates it. Return safe status and redact protocol diagnostics.
@@ -33,3 +33,8 @@ GO54's published Outlook setup guide documents the generic host `mail.yoursite.c
 - IMAP validation authenticates and lists folders, then closes the connection. SMTP validation calls transport verification only; it never sends a message.
 - No message read/send/folder mutation capability is advertised yet. Those capabilities are added in later phases after contract and provider-specific tests.
 - GO54 account-level IMAP/SMTP access remains unconfirmed until the user explicitly authorises testing against a real mailbox. Network validation is not part of CI.
+
+
+## Phase 3 read implementation
+
+The GO54 adapter now exposes folders, bounded message pages, and message detail over IMAP. Pagination uses UIDs and includes UIDVALIDITY in its opaque cursor; a changed UIDVALIDITY forces a refresh rather than silently serving a different message. The adapter limits each body-part download to 256 KiB, returns attachment metadata only, and does not fetch or persist complete RFC822 source. API message HTML is sanitised with an allow-list before it reaches the browser. No IMAP write operation, SMTP send, attachment download, or sync job is introduced in this increment.
